@@ -5,6 +5,13 @@ import io.circe.numbers.BiggerDecimal
 sealed abstract class Op[A] {
   def bracket: Op[A]
 
+  // Convenience methods for source compatibility with the current cursor API.
+  def downField(key: String): Op[Unit] = flatMap(_ => Op.DownField(key))
+  def downAt(index: Int): Op[Unit] = flatMap(_ => Op.DownAt(index))
+  def as[B](implicit decodeB: Decoder[B]): Op[B] = flatMap(_ => decodeB.op).bracket
+  def get[B](key: String)(implicit decodeB: Decoder[B]): Op[B] =
+    flatMap(_ => Op.DownField(key).flatMap(_ => decodeB.op)).bracket
+
   // These definitions are for the sake of convenience—we could get them via Cats syntax.
   def map[B](f: A => B): Op[B] = Op.Map(this, f, false)
   def flatMap[B](f: A => Op[B]): Op[B] = Op.Bind(this, f, false)
