@@ -27,7 +27,8 @@ abstract class OpInstances {
       m.f(_) match {
         case Left(a) => tailRecM(a)(f)
         case Right(b) => Pure(b)
-      }
+      },
+      false
     )
 
     private[this] def bindHelper[A, B, C](m: Bind[C, Either[A, B]])(f: A => Op[Either[A, B]]): Bind[C, B] = Bind(
@@ -35,17 +36,16 @@ abstract class OpInstances {
       m.f(_).flatMap {
         case Left(a) => tailRecM(a)(f)
         case Right(b) => Pure(b)
-      }
+      },
+      false
     )
 
-    @annotation.tailrec
     private[this] def tailRecMHelper[A, B](opA: Op[Either[A, B]])(f: A => Op[Either[A, B]]): Op[B] = opA match {
-      case Pure(Left(a))  => tailRecM(a)(f)
-      case Pure(Right(b)) => Pure(b)
-      case Fail(failure)  => Fail(failure)
-      case m @ Map(_, _)  => mapHelper(m)(f)
-      case b @ Bind(_, _) => bindHelper(b)(f)
-      case Bracket(opA)   => tailRecMHelper(opA)(f)
+      case Pure(Left(a))     => tailRecM(a)(f)
+      case Pure(Right(b))    => Pure(b)
+      case Fail(failure)     => Fail(failure)
+      case m @ Map(_, _, _)  => mapHelper(m)(f)
+      case b @ Bind(_, _, _) => bindHelper(b)(f)
     }
   }
 }

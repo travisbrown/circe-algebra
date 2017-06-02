@@ -23,15 +23,12 @@ class OpSpec extends FunSuite with Discipline {
 
   implicit val eqFailure: Eq[Failure] = Eq.fromUniversalEquals
 
-  private[this] def arbitraryOpWithDepth[A: Arbitrary](depth: Int): Gen[Op[A]] =
-    if (depth < 8) Gen.oneOf(
+  implicit def arbitraryOp[A: Arbitrary]: Arbitrary[Op[A]] = Arbitrary(
+    Gen.oneOf(
       Arbitrary.arbitrary[A].map(Op.Pure(_)),
-      arbitraryOpWithDepth[A](depth + 1).map(Op.Bracket(_)),
       Arbitrary.arbitrary[Failure].map(Op.Fail[A](_))
-    ) else Arbitrary.arbitrary[A].map(Op.Pure(_))
-
-  implicit def arbitraryOp[A: Arbitrary]: Arbitrary[Op[A]] = Arbitrary(arbitraryOpWithDepth(0))
-
+    )
+  )
 
   private[this] def arbitraryValues[A](implicit A: Arbitrary[A]): Stream[A] = Stream.continually(
     A.arbitrary.sample

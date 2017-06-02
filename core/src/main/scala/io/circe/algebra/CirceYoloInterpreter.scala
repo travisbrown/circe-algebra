@@ -12,27 +12,32 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
   def runS[A](s: Json => (Json, A))(j: Json): A = s(j)._2
 
   def apply[A](op: Op[A]): Json => (Json, A) = op match {
-    case ReadNull        => j => (j, readNull(j))
-    case ReadBoolean     => j => (j, readBoolean(j))
-    case ReadNumber      => j => (j, readNumber(j))
-    case ReadLong        => j => (j, readLong(j))
-    case ReadString      => j => (j, readString(j))
-    case DownField(key)  => j => (downField(key)(j), ())
-    case DownAt(index)   => j => (downAt(index)(j), ())
-    case ReadFields(opA) => j => (j, readFields(opA)(j))
-    case ReadValues(opA) => j => (j, readValues(opA)(j))
+    case ReadNull          => j => (j, readNull(j))
+    case ReadBoolean       => j => (j, readBoolean(j))
+    case ReadNumber        => j => (j, readNumber(j))
+    case ReadLong          => j => (j, readLong(j))
+    case ReadString        => j => (j, readString(j))
+    case DownField(key)    => j => (downField(key)(j), ())
+    case DownAt(index)     => j => (downAt(index)(j), ())
+    case ReadFields(opA)   => j => (j, readFields(opA)(j))
+    case ReadValues(opA)   => j => (j, readValues(opA)(j))
 
-    case Pure(value)     => j => (j, value)
-    case Fail(failure)   => throw failure
-    case Map(opA, f)     => j => self(opA)(j) match { case (newJ, a) => (newJ, f(a)) }
-    case Bind(opA, f)    => j => self(opA)(j) match { case (newJ, a) => self(f(a))(newJ) }
-    case Join(opA, opB)  => j => {
+    case Pure(value)       => j => (j, value)
+    case Fail(failure)     => throw failure
+
+    case Map(opA, f, false)    => j => self(opA)(j) match { case (j1, a) => (j1, f(a)) }
+    case Bind(opA, f, false)   => j => self(opA)(j) match { case (j1, a) => self(f(a))(j1) }
+    case Join(opA, opB, false) => j => {
       val (j1, a) = self(opA)(j)
       val (j2, b) = self(opB)(j1)
       (j2, (a, b))
     }
 
-    case Bracket(opA)    => j => self(opA)(j) match { case (_, a) => (j, a) }
+    case Map(opA, f, true)     => j => (j, f(self(opA)(j)._2))
+    case Bind(opA, f, true)    => j => self(opA)(j) match {
+      case (newJ, a) => (j, self(f(a))(newJ)._2)
+    }
+    case Join(opA, opB, true)  => j => (j, (self(opA)(j)._2, self(opB)(j)._2))
   }
 
   def readNull(j: Json): Unit = if (j.isNull) () else throw new Exception("Something bad happened")

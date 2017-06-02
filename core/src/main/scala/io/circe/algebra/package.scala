@@ -15,12 +15,9 @@ package object algebra {
   def readFields[A](opA: Op[A]): Op[Vector[(String, A)]] = Op.ReadFields(opA)
   def readValues[A](opA: Op[A]): Op[Vector[A]] = Op.ReadValues(opA)
 
-  def bracket[A](opA: Op[A]): Op[A] = Op.Bracket(opA)
-
-  def read[A](implicit decodeA: Decoder[A]): Op[A] = bracket(decodeA.op)
-  def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = bracket(downField(key).flatMap(_ => decodeA.op))
+  def read[A](implicit decodeA: Decoder[A]): Op[A] = decodeA.op
+  def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = downField(key).flatMap(_ => decodeA.op).bracket
 
   val jsonEither: CirceInterpreter[Either[Failure, ?]] = new CirceInterpreter[Either[Failure, ?]]
-
   val jsonYolo: Interpreter[Id, Json] = CirceYoloInterpreter
 }

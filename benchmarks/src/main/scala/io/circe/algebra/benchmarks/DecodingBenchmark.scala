@@ -1,6 +1,7 @@
 package io.circe.algebra.benchmarks
 
 import cats.Apply
+import cats.syntax.cartesian._
 import io.circe.{ Decoder => DecoderC, Encoder, Json }
 import io.circe.algebra.{ Decoder => DecoderA, Op, _ }
 import io.circe.syntax._
@@ -11,14 +12,14 @@ case class Foo(f: Double, m: Map[String, Boolean], v: Vector[Long])
 
 object Foo {
   implicit val encodeFoo: Encoder[Foo] = Encoder.instance {
-    case Foo(f, m, v) => Json.obj("f" -> f.asJson, "m" -> m.asJson, "v" -> v.asJson)
+    case Foo(f, m, v) => Json.obj("f" -> f.asJson, "m" -> m.asJson, "nested" -> Json.obj("v" -> v.asJson))
   }
 
   implicit val decodeFooC: DecoderC[Foo] = DecoderC.instance { c =>
     DecoderC.resultInstance.map3(
       c.get[Double]("f"),
       c.get[Map[String, Boolean]]("m"),
-      c.get[Vector[Long]]("v")
+      c.downField("nested").get[Vector[Long]]("v")
     )(Foo(_, _, _))
   }
 
@@ -26,7 +27,7 @@ object Foo {
     Apply[Op].map3(
       get[Double]("f"),
       get[Map[String, Boolean]]("m"),
-      get[Vector[Long]]("v")
+      downField("nested") *> get[Vector[Long]]("v")
     )(Foo(_, _, _))
   )
 
