@@ -28,6 +28,7 @@ val sharedSettings = Seq(
 
 val root = project.in(file("."))
   .settings(sharedSettings)
+  .settings(libraryDependencies += "io.circe" %% "circe-literal" % circeVersion)
   .aggregate(core, benchmarks)
   .dependsOn(core)
 
