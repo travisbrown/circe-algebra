@@ -12,7 +12,7 @@ cache:
     - $HOME/.sbt/boot
 
 script:
-  - sbt clean test
+  - sbt clean test scalastyle
 
   # See http://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
   # Tricks to avoid unnecessary cache updates

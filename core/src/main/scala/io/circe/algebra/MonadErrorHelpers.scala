@@ -12,6 +12,6 @@ trait MonadErrorHelpers[F[_], E] {
 
   def fromEither[A](either: Either[E, A]): F[A] = either match {
     case Right(value) => F.pure(value)
-    case Left(failure) => F.raiseError(failure) 
+    case Left(failure) => F.raiseError(failure)
   }
 }
