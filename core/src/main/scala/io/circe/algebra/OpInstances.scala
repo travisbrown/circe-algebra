@@ -5,7 +5,7 @@ import cats.MonadError
 abstract class OpInstances {
   import Op._
 
-  implicit val opMonad: MonadError[Op, Failure] = new MonadError[Op, Failure] {
+  implicit val opMonadError: MonadError[Op, Failure] = new MonadError[Op, Failure] {
     def pure[A](value: A): Op[A] = Pure(value)
     def flatMap[A, B](opA: Op[A])(f: A => Op[B]): Op[B] = opA.flatMap(f)
 
