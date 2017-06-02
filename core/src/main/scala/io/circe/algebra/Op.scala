@@ -5,9 +5,6 @@ import io.circe.numbers.BiggerDecimal
 sealed abstract class Op[A] {
   def bracket: Op[A]
 
-  def isReadingOp: Boolean
-  def isNavigationOp: Boolean
-
   // These definitions are for the sake of convenience—we could get them via Cats syntax.
   def map[B](f: A => B): Op[B] = Op.Map(this, f, false)
   def flatMap[B](f: A => Op[B]): Op[B] = Op.Bind(this, f, false)
@@ -17,26 +14,18 @@ sealed abstract class Op[A] {
 
 sealed abstract class ReadingOp[A] extends Op[A] {
   final def bracket: Op[A] = this
-  final def isReadingOp: Boolean = true
-  final def isNavigationOp: Boolean = false
 }
 
 sealed abstract class NavigationOp extends Op[Unit] {
   final def bracket: Op[Unit] = Op.Unit
-  final def isReadingOp: Boolean = true
-  final def isNavigationOp: Boolean = false
 }
 
 sealed abstract class StrictOp[A] extends Op[A] {
   final def bracket: Op[A] = this
-  final def isReadingOp: Boolean = false
-  final def isNavigationOp: Boolean = false
 }
 
 sealed abstract class CompositionOp[A] extends Op[A] {
   def isBracketed: Boolean
-  final def isReadingOp: Boolean = false
-  final def isNavigationOp: Boolean = false
 }
 
 object Op extends OpInstances {

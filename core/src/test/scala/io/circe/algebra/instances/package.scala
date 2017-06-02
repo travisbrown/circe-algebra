@@ -31,32 +31,6 @@ package object instances {
 
   implicit def eqOp[A: Eq]: Eq[Op[A]] = Eq.instance[Op[A]] {
     case (Op.Pure(a), Op.Pure(b)) => Eq[A].eqv(a, b)
-    case (Op.ReadNull, other) if other.isReadingOp => other == Op.ReadNull
-    case (Op.ReadBoolean, other) if other.isReadingOp => other == Op.ReadBoolean
-    case (Op.ReadNumber, other) if other.isReadingOp => other == Op.ReadNumber
-    case (Op.ReadString, other) if other.isReadingOp => other == Op.ReadString
-    case (Op.ReadLong, other) if other.isReadingOp => other == Op.ReadLong
-    case (other, Op.ReadNull) if other.isReadingOp => other == Op.ReadNull
-    case (other, Op.ReadBoolean) if other.isReadingOp => other == Op.ReadBoolean
-    case (other, Op.ReadNumber) if other.isReadingOp => other == Op.ReadNumber
-    case (other, Op.ReadString) if other.isReadingOp => other == Op.ReadString
-    case (other, Op.ReadLong) if other.isReadingOp => other == Op.ReadLong
-    case (Op.DownField(a), other) if other.isNavigationOp => other match {
-      case Op.DownField(b) => a == b
-      case _ => false
-    }
-    case (Op.DownAt(a), other) if other.isNavigationOp => other match {
-      case Op.DownAt(b) => a == b
-      case _ => false
-    }
-    case (other, Op.DownField(a)) if other.isNavigationOp => other match {
-      case Op.DownField(b) => a == b
-      case _ => false
-    }
-    case (other, Op.DownAt(a)) if other.isNavigationOp => other match {
-      case Op.DownAt(b) => a == b
-      case _ => false
-    }
     case (a, b) =>
       val js = arbitraryValues[Json].take(8)
 
