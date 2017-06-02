@@ -29,7 +29,7 @@ sealed abstract class CompositionOp[A] extends Op[A] {
 }
 
 object Op extends OpInstances {
-  val Unit = Pure[Unit](())
+  val Unit: Op[Unit] = Pure[Unit](())
 
   // Primitive reading operations.
   case object ReadNull                                                   extends ReadingOp[Unit]
