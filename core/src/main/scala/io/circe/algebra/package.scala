@@ -9,6 +9,9 @@ package object algebra {
   def readBoolean: Op[Boolean] = Op.ReadBoolean
   def readNumber: Op[BiggerDecimal] = Op.ReadNumber
   def readString: Op[String] = Op.ReadString
+  def readLong: Op[Long] = Op.ReadLong
+  def readDouble: Op[Double] = Op.ReadDouble
+
   def downField(key: String): Op[Unit] = Op.DownField(key)
   def downAt(index: Int): Op[Unit] = Op.DownAt(index)
 

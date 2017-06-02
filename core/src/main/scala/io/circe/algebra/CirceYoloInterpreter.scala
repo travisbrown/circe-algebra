@@ -16,6 +16,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
     case ReadBoolean       => j => (j, readBoolean(j))
     case ReadNumber        => j => (j, readNumber(j))
     case ReadLong          => j => (j, readLong(j))
+    case ReadDouble        => j => (j, readDouble(j))
     case ReadString        => j => (j, readString(j))
     case DownField(key)    => j => (downField(key)(j), ())
     case DownAt(index)     => j => (downAt(index)(j), ())
@@ -44,6 +45,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
   def readBoolean(j: Json): Boolean = j.asInstanceOf[Json.JBoolean].b
   def readNumber(j: Json): BiggerDecimal = j.asInstanceOf[Json.JNumber].n.toBiggerDecimal
   def readLong(j: Json): Long = j.asInstanceOf[Json.JNumber].n.toLong.get
+  def readDouble(j: Json): Double = j.asInstanceOf[Json.JNumber].n.toDouble
   def readString(j: Json): String = j.asInstanceOf[Json.JString].s
   def downField(key: String)(j: Json): Json = j.asInstanceOf[Json.JObject].o(key).get
   def downAt(index: Int)(j: Json): Json = j.asInstanceOf[Json.JArray].a(index)

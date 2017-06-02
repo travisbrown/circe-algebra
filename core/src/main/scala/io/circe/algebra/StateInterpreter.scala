@@ -15,6 +15,7 @@ abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, Failure]) ext
     case ReadBoolean     => StateT.inspectF(readBoolean)
     case ReadNumber      => StateT.inspectF(readNumber)
     case ReadLong        => StateT.inspectF(readLong)
+    case ReadDouble      => StateT.inspectF(readDouble)
     case ReadString      => StateT.inspectF(readString)
     case DownField(key)  => StateT.modifyF(downField(key))
     case DownAt(index)   => StateT.modifyF(downAt(index))

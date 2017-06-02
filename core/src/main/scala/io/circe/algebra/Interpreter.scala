@@ -14,6 +14,7 @@ abstract class Interpreter[F[_], J] { self =>
   def readBoolean(j: J): F[Boolean]
   def readNumber(j: J): F[BiggerDecimal]
   def readLong(j: J): F[Long]
+  def readDouble(j: J): F[Double]
   def readString(j: J): F[String]
   def downField(key: String)(j: J): F[J]
   def downAt(index: Int)(j: J): F[J]

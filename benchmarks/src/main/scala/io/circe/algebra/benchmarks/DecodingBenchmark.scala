@@ -47,8 +47,8 @@ object Foo {
  * > sbt "benchmarks/jmh:run -i 10 -wi 10 -f 2 -t 1 io.circe.algebra.benchmarks.DecodingBenchmark"
  */
 @State(Scope.Thread)
-@BenchmarkMode(Array(Mode.Throughput))
-@OutputTimeUnit(TimeUnit.SECONDS)
+@BenchmarkMode(Array(Mode.AverageTime))
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 class DecodingBenchmark {
   @Benchmark
   def decodeC: Foo = Foo.decodeFooC.decodeJson(Foo.exampleJson).right.get

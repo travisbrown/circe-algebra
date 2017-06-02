@@ -15,26 +15,50 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, Failure]) extends StateIn
   def parse(doc: String): F[Json] = fromEither(io.circe.jawn.parse(doc).left.map(_ => OtherFailure("Parsing failure")))
 
   def readNull(j: Json): F[Unit] = if (j.isNull) F.pure(()) else F.raiseError(DecodingFailure("Expected null"))
-  def readBoolean(j: Json): F[Boolean] = fromOption(j.asBoolean)(DecodingFailure("Expected boolean"))
+
+  def readBoolean(j: Json): F[Boolean] =
+    if (j.isBoolean) F.pure(j.asInstanceOf[Json.JBoolean].b) else F.raiseError(DecodingFailure("Expected boolean"))
+
   def readNumber(j: Json): F[BiggerDecimal] =
-    fromOption(j.asNumber.map(_.toBiggerDecimal))(DecodingFailure("Expected number"))
-  def readLong(j: Json): F[Long] = fromOption(j.asNumber.flatMap(_.toLong))(DecodingFailure("Expected number"))
-  def readString(j: Json): F[String] = fromOption(j.asString)(DecodingFailure("Expected null"))
+    if (j.isNumber) F.pure(j.asInstanceOf[Json.JNumber].n.toBiggerDecimal) else {
+      F.raiseError(DecodingFailure("Expected number"))
+    }
+
+  def readLong(j: Json): F[Long] =
+    if (j.isNumber) fromOption(j.asInstanceOf[Json.JNumber].n.toLong)(DecodingFailure("Expected number")) else {
+      F.raiseError(DecodingFailure("Expected number"))
+    }
+
+  def readDouble(j: Json): F[Double] =
+    if (j.isNumber) F.pure(j.asInstanceOf[Json.JNumber].n.toDouble) else {
+      F.raiseError(DecodingFailure("Expected number"))
+    }
+
+  def readString(j: Json): F[String] =
+    if (j.isString) F.pure(j.asInstanceOf[Json.JString].s) else F.raiseError(DecodingFailure("Expected null"))
 
   def downField(key: String)(j: Json): F[Json] =
-    fromOption(j.asObject.flatMap(_(key)))(DecodingFailure(s"Expected object with key $key"))
+    if (j.isObject) {
+      fromOption(j.asInstanceOf[Json.JObject].o(key))(DecodingFailure(s"Expected object with key $key"))
+    } else F.raiseError(DecodingFailure(s"Expected object with key $key"))
 
   def downAt(index: Int)(j: Json): F[Json] = fromOption(j.asArray.flatMap(_.lift(index)))(
     DecodingFailure(s"Expected array with at least ${ index + 1} elements")
   )
 
-  def readFields[A](opA: Op[A])(j: Json): F[Vector[(String, A)]] =
+  def readFields[A](opA: Op[A])(j: Json): F[Vector[(String, A)]] = {
+    val s = self.apply(opA).runA _
+
     fromOption(j.asObject)(DecodingFailure("Expected object")).flatMap(
       _.toVector.traverse {
-        case (k, v) => self.apply(opA).runA(v).map(k -> _)
+        case (k, v) => s(v).map(k -> _)
       }
     )
+  }
 
-  def readValues[A](opA: Op[A])(j: Json): F[Vector[A]] =
-    fromOption(j.asArray)(DecodingFailure("Expected array")).flatMap(_.traverse(self.apply(opA).runA))
+  def readValues[A](opA: Op[A])(j: Json): F[Vector[A]] = {
+    val s = self.apply(opA).runA _
+
+    fromOption(j.asArray)(DecodingFailure("Expected array")).flatMap(_.traverse(s))
+  }
 }
