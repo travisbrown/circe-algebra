@@ -19,6 +19,7 @@ abstract class OpInstances {
       case other => other
     }
 
+    // TODO: This isn't actually stack-safe.
     def tailRecM[A, B](a: A)(f: A => Op[Either[A, B]]): Op[B] = tailRecMHelper(f(a))(f)
 
     private[this] def mapHelper[A, B, C](m: Map[C, Either[A, B]])(f: A => Op[Either[A, B]]): Bind[C, B] = Bind(
