@@ -42,9 +42,9 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
   def readString(j: Json): String = j.asInstanceOf[Json.JString].s
   def downField(key: String)(j: Json): Json = j.asInstanceOf[Json.JObject].o(key).get
   def downAt(index: Int)(j: Json): Json = j.asInstanceOf[Json.JArray].a(index)
-  def readFields[A](opA: Op[A])(j: Json): List[(String, A)] = {
-    val fs = j.asInstanceOf[Json.JObject].o.toList
-    val builder = List.newBuilder[(String, A)]
+  def readFields[A](opA: Op[A])(j: Json): Vector[(String, A)] = {
+    val fs = j.asInstanceOf[Json.JObject].o.toVector
+    val builder = Vector.newBuilder[(String, A)]
     val d: Json => A = self(opA)(_)._2
 
     fs.foreach {

@@ -1,7 +1,6 @@
 package io.circe.algebra
 
 import cats.MonadError
-import cats.instances.list._
 import cats.instances.vector._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
@@ -27,9 +26,9 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, Failure]) extends StateIn
   def downAt(index: Int)(j: Json): F[Json] =
     fromOption(j.asArray.flatMap(_.lift(index)))(DecodingFailure(s"Expected array with at least ${ index + 1} elements"))
 
-  def readFields[A](opA: Op[A])(j: Json): F[List[(String, A)]] =
+  def readFields[A](opA: Op[A])(j: Json): F[Vector[(String, A)]] =
     fromOption(j.asObject)(DecodingFailure("Expected object")).flatMap(
-      _.toList.traverse {
+      _.toVector.traverse {
         case (k, v) => self.apply(opA).runA(v).map(k -> _)
       }
     )

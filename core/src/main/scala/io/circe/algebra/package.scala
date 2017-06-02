@@ -12,7 +12,7 @@ package object algebra {
   def downField(key: String): Op[Unit] = Op.DownField(key)
   def downAt(index: Int): Op[Unit] = Op.DownAt(index)
 
-  def readFields[A](opA: Op[A]): Op[List[(String, A)]] = Op.ReadFields(opA)
+  def readFields[A](opA: Op[A]): Op[Vector[(String, A)]] = Op.ReadFields(opA)
   def readValues[A](opA: Op[A]): Op[Vector[A]] = Op.ReadValues(opA)
 
   def bracket[A](opA: Op[A]): Op[A] = Op.Bracket(opA)

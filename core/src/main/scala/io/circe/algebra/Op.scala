@@ -19,7 +19,7 @@ object Op extends OpInstances {
 
   case class DownField(key: String)                extends Op[Unit]
   case class DownAt(index: Int)                    extends Op[Unit]
-  case class ReadFields[A](opA: Op[A])             extends Op[List[(String, A)]]
+  case class ReadFields[A](opA: Op[A])             extends Op[Vector[(String, A)]]
   case class ReadValues[A](opA: Op[A])             extends Op[Vector[A]]
 
   case class Pure[A](value: A)                     extends Op[A]
