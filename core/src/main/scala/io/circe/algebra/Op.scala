@@ -39,10 +39,11 @@ object Op extends OpInstances {
 
   // Redundant reading operations designed to support optimizations.
   case object ReadLong                                                   extends ReadingOp[Long]
+  case object ReadDouble                                                 extends ReadingOp[Double]
 
   // Reading operations for JSON objects and arrays.
-  case class ReadFields[A](opA: Op[A])                                   extends ReadingOp[Vector[(String, A)]]
-  case class ReadValues[A](opA: Op[A])                                   extends ReadingOp[Vector[A]]
+  case class ReadFields[A](opA: Op[A])                                   extends ReadingOp[Iterable[(String, A)]]
+  case class ReadValues[A](opA: Op[A])                                   extends ReadingOp[Iterable[A]]
 
   // Navigation operations.
   case class DownField(key: String)                                      extends NavigationOp

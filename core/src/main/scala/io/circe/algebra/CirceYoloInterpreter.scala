@@ -16,6 +16,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
     case ReadBoolean       => j => (j, readBoolean(j))
     case ReadNumber        => j => (j, readNumber(j))
     case ReadLong          => j => (j, readLong(j))
+    case ReadDouble        => j => (j, readDouble(j))
     case ReadString        => j => (j, readString(j))
     case DownField(key)    => j => (downField(key)(j), ())
     case DownAt(index)     => j => (downAt(index)(j), ())
@@ -44,30 +45,22 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
   def readBoolean(j: Json): Boolean = j.asInstanceOf[Json.JBoolean].b
   def readNumber(j: Json): BiggerDecimal = j.asInstanceOf[Json.JNumber].n.toBiggerDecimal
   def readLong(j: Json): Long = j.asInstanceOf[Json.JNumber].n.toLong.get
+  def readDouble(j: Json): Double = j.asInstanceOf[Json.JNumber].n.toDouble
   def readString(j: Json): String = j.asInstanceOf[Json.JString].s
   def downField(key: String)(j: Json): Json = j.asInstanceOf[Json.JObject].o(key).get
   def downAt(index: Int)(j: Json): Json = j.asInstanceOf[Json.JArray].a(index)
-  def readFields[A](opA: Op[A])(j: Json): Vector[(String, A)] = {
-    val fs = j.asInstanceOf[Json.JObject].o.toVector
-    val builder = Vector.newBuilder[(String, A)]
-    val d: Json => A = self(opA)(_)._2
+  def readFields[A](opA: Op[A])(j: Json): Iterable[(String, A)] = new Iterable[(String, A)] {
+    private[this] val d: Json => A = self(opA)(_)._2
+    private[this] val fs = j.asInstanceOf[Json.JObject].o.toVector
 
-    fs.foreach {
-      case (k, v) =>
-        builder += (k -> d(v))
+    def iterator: Iterator[(String, A)] = fs.iterator.map {
+      case (k, v) => (k -> d(v))
     }
-
-    builder.result()
   }
-  def readValues[A](opA: Op[A])(j: Json): Vector[A] = {
+  def readValues[A](opA: Op[A])(j: Json): Iterable[A] = new Iterable[A] {
+    private[this] val d: Json => A = self(opA)(_)._2
     val js = j.asInstanceOf[Json.JArray].a
-    val builder = Vector.newBuilder[A]
-    val d: Json => A = self(opA)(_)._2
 
-    js.foreach { j =>
-      builder += d(j)
-    }
-
-    builder.result()
+    def iterator: Iterator[A] = js.iterator.map(d)
   }
 }

@@ -28,9 +28,10 @@ object Decoder {
     )
   */
 
-  implicit val decodeDouble: Decoder[Double] = Decoder(Op.ReadNumber).map(_.toDouble)
+  implicit val decodeDouble: Decoder[Double] = Decoder(Op.ReadDouble)
 
-  implicit def decodeVector[A](implicit decodeA: Decoder[A]): Decoder[Vector[A]] = Decoder(Op.ReadValues(decodeA.op))
+  implicit def decodeVector[A](implicit decodeA: Decoder[A]): Decoder[Vector[A]] =
+    Decoder(Op.ReadValues(decodeA.op)).map(_.toVector)
 
   implicit def decodeMap[A](implicit decodeA: Decoder[A]): Decoder[Map[String, A]] =
     Decoder(Op.ReadFields(decodeA.op)).map(_.toMap)

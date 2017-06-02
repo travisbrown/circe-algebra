@@ -19,6 +19,7 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, Failure]) extends StateIn
   def readNumber(j: Json): F[BiggerDecimal] =
     fromOption(j.asNumber.map(_.toBiggerDecimal))(DecodingFailure("Expected number"))
   def readLong(j: Json): F[Long] = fromOption(j.asNumber.flatMap(_.toLong))(DecodingFailure("Expected number"))
+  def readDouble(j: Json): F[Double] = fromOption(j.asNumber.map(_.toDouble))(DecodingFailure("Expected number"))
   def readString(j: Json): F[String] = fromOption(j.asString)(DecodingFailure("Expected null"))
 
   def downField(key: String)(j: Json): F[Json] =
@@ -28,13 +29,13 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, Failure]) extends StateIn
     DecodingFailure(s"Expected array with at least ${ index + 1} elements")
   )
 
-  def readFields[A](opA: Op[A])(j: Json): F[Vector[(String, A)]] =
+  def readFields[A](opA: Op[A])(j: Json): F[Iterable[(String, A)]] =
     fromOption(j.asObject)(DecodingFailure("Expected object")).flatMap(
       _.toVector.traverse {
         case (k, v) => self.apply(opA).runA(v).map(k -> _)
-      }
+      }.map(_.toIterable)
     )
 
-  def readValues[A](opA: Op[A])(j: Json): F[Vector[A]] =
-    fromOption(j.asArray)(DecodingFailure("Expected array")).flatMap(_.traverse(self.apply(opA).runA))
+  def readValues[A](opA: Op[A])(j: Json): F[Iterable[A]] =
+    fromOption(j.asArray)(DecodingFailure("Expected array")).flatMap(_.traverse(self.apply(opA).runA).map(_.toIterable))
 }
