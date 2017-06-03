@@ -1,7 +1,7 @@
-val circeVersion = "0.8.0"
+val circeVersion = "0.9.0-M2"
 
 val sharedSettings = Seq(
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.4",
   scalacOptions ++= Seq(
     "-Xlint",
     "-Ypartial-unification",
@@ -19,9 +19,10 @@ val sharedSettings = Seq(
     "io.circe" %% "circe-jawn" % circeVersion,
     "io.circe" %% "circe-testing" % circeVersion % Test,
     "org.scalacheck" %% "scalacheck" % "1.13.5" % Test,
-    "org.scalatest" %% "scalatest" % "3.0.3" % Test,
-    "org.typelevel" %% "discipline" % "0.7.3" % Test,
-    "org.typelevel" %% "cats-laws" % "0.9.0" % Test
+    "org.scalatest" %% "scalatest" % "3.0.4" % Test,
+    "org.typelevel" %% "discipline" % "0.8" % Test,
+    "org.typelevel" %% "cats-free" % "1.0.0-RC1",
+    "org.typelevel" %% "cats-laws" % "1.0.0-RC1" % Test
   ),
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 )

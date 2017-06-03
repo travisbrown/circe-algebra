@@ -2,26 +2,19 @@ package io.circe.algebra
 
 import cats.instances.either._
 import cats.kernel.Eq
-import io.circe.Json
+import io.circe.{ DecodingFailure, Error, Json }
 import io.circe.testing.instances._
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
 
 package object instances {
-  implicit val arbitraryFailure: Arbitrary[Failure] = Arbitrary(
-    Gen.oneOf(
-      Arbitrary.arbitrary[String].map(DecodingFailure(_)),
-      Arbitrary.arbitrary[String].map(OtherFailure(_))
-    )
-  )
+  implicit val cogenFailure: Cogen[DecodingFailure] = Cogen((_: DecodingFailure).hashCode.toLong)
 
-  implicit val cogenFailure: Cogen[Failure] = Cogen((_: Failure).hashCode.toLong)
-
-  implicit val eqFailure: Eq[Failure] = Eq.fromUniversalEquals
+  implicit val eqFailure: Eq[DecodingFailure] = Eq.fromUniversalEquals
 
   implicit def arbitraryOp[A: Arbitrary]: Arbitrary[Op[A]] = Arbitrary(
     Gen.oneOf(
       Arbitrary.arbitrary[A].map(Op.Pure(_)),
-      Arbitrary.arbitrary[Failure].map(Op.Fail[A](_))
+      Arbitrary.arbitrary[DecodingFailure].map(Op.Fail[A](_))
     )
   )
 
@@ -35,15 +28,15 @@ package object instances {
       val js = arbitraryValues[Json].take(8)
 
       js.forall { j =>
-        Eq[Either[Failure, A]].eqv(
-          jsonEither.decode(j)(Decoder(a)),
-          jsonEither.decode(j)(Decoder(b))
+        Eq[Either[Error, A]].eqv(
+          interpreters.either.decode(j)(Decoder.instance(a)),
+          interpreters.either.decode(j)(Decoder.instance(b))
         )
       }
   }
 
   implicit def arbitraryDecoder[A: Arbitrary]: Arbitrary[Decoder[A]] = Arbitrary(
-    Arbitrary.arbitrary[Op[A]].map(Decoder(_))
+    Arbitrary.arbitrary[Op[A]].map(Decoder.instance(_))
   )
 
   implicit def eqDecoder[A: Eq]: Eq[Decoder[A]] = Eq.by(_.op)

@@ -1,9 +1,9 @@
 package io.circe.algebra.benchmarks
 
 import cats.Apply
-import cats.syntax.cartesian._
 import io.circe.{ Decoder => DecoderC, Encoder, Json }
 import io.circe.algebra.{ Decoder => DecoderA, Op, _ }
+import io.circe.algebra.free.{ Decoder => DecoderF, Op => OpF }
 import io.circe.syntax._
 import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations._
@@ -23,18 +23,26 @@ object Foo {
     )(Foo(_, _, _))
   }
 
-  implicit val decodeFooA: DecoderA[Foo] = DecoderA(
+  implicit val decodeFooA: DecoderA[Foo] = DecoderA.instance(
     Apply[Op].map3(
       get[Double]("f"),
       get[Map[String, Boolean]]("m"),
-      downField("nested") *> get[Vector[Long]]("v")
+      downField("nested").get[Vector[Long]]("v")
+    )(Foo(_, _, _))
+  )
+
+  implicit val decodeFooF: DecoderF[Foo] = DecoderF(
+    Apply[OpF.OpF].map3(
+      OpF.bracket(OpF.get[Double]("f")),
+      OpF.bracket(OpF.get[Map[String, Boolean]]("m")),
+      OpF.bracket(OpF.downField("nested").flatMap(_ => OpF.get[Vector[Long]]("v")))
     )(Foo(_, _, _))
   )
 
   val example: Foo = Foo(
     Double.MaxValue,
-    (0 to 10).map(i => i.toString -> (i % 2 == 0)).toMap,
-    (1000L to 1010L).toVector
+    (0 to 100).map(i => i.toString -> (i % 2 == 0)).toMap,
+    (1000L to 2010L).toVector
   )
   val exampleJson: Json = example.asJson
 }
@@ -51,11 +59,27 @@ object Foo {
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 class DecodingBenchmark {
   @Benchmark
-  def decodeC: Foo = Foo.decodeFooC.decodeJson(Foo.exampleJson).right.get
+  def decodeFailFastWithCursors: Foo = Foo.decodeFooC.decodeJson(Foo.exampleJson).right.get
 
   @Benchmark
-  def decodeYoloA: Foo = jsonYolo.decode[Foo](Foo.exampleJson)
+  def decodeAccumulatingWithCursors: Foo =
+    Foo.decodeFooC.decodeAccumulating(Foo.exampleJson.hcursor).getOrElse(sys.error("should never happen"))
 
   @Benchmark
-  def decodeEitherA: Foo = jsonEither.decode[Foo](Foo.exampleJson).right.get
+  def decodeFailFast: Foo = interpreters.failFast.decode[Foo](Foo.exampleJson).right.get
+
+  @Benchmark
+  def decodeAccumulating: Foo = interpreters.accumulating.decode[Foo](Foo.exampleJson).right.get
+
+  @Benchmark
+  def decodeFailFastWithHistory: Foo = interpreters.failFast.decode[Foo](Foo.exampleJson).right.get
+
+  @Benchmark
+  def decodeAccumulatingWithHistory: Foo = interpreters.accumulating.decode[Foo](Foo.exampleJson).right.get
+
+  @Benchmark
+  def decodeIntoEither: Foo = interpreters.either.decode[Foo](Foo.exampleJson).right.get
+
+  @Benchmark
+  def decodeFree: Foo = io.circe.algebra.free.decode[Foo](Foo.exampleJson).right.get
 }
