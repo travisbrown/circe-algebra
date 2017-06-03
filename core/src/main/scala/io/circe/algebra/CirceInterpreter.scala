@@ -47,7 +47,7 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, Failure]) extends StateIn
   )
 
   def readFields[A](opA: Op[A])(j: Json): F[Vector[(String, A)]] = {
-    val s = self.apply(opA).runA _
+    val s: Json => F[A] = self.apply(opA)
 
     fromOption(j.asObject)(DecodingFailure("Expected object")).flatMap(
       _.toVector.traverse {
@@ -57,7 +57,7 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, Failure]) extends StateIn
   }
 
   def readValues[A](opA: Op[A])(j: Json): F[Vector[A]] = {
-    val s = self.apply(opA).runA _
+    val s: Json => F[A] = self.apply(opA)
 
     fromOption(j.asArray)(DecodingFailure("Expected array")).flatMap(_.traverse(s))
   }

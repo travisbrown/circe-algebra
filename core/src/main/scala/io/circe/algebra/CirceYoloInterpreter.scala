@@ -9,9 +9,9 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
 
   type S[x] = Json => (Json, x)
 
-  def runS[A](s: Json => (Json, A))(j: Json): A = s(j)._2
+  def apply[A](op: Op[A])(j: Json): A = compile(op)(j)._2
 
-  def apply[A](op: Op[A]): Json => (Json, A) = op match {
+  def compile[A](op: Op[A]): Json => (Json, A) = op match {
     case ReadNull          => j => (j, readNull(j))
     case ReadBoolean       => j => (j, readBoolean(j))
     case ReadNumber        => j => (j, readNumber(j))
@@ -26,19 +26,19 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
     case Pure(value)       => j => (j, value)
     case Fail(failure)     => throw failure
 
-    case Map(opA, f, false)    => j => self(opA)(j) match { case (j1, a) => (j1, f(a)) }
-    case Bind(opA, f, false)   => j => self(opA)(j) match { case (j1, a) => self(f(a))(j1) }
+    case Map(opA, f, false)    => j => compile(opA)(j) match { case (j1, a) => (j1, f(a)) }
+    case Bind(opA, f, false)   => j => compile(opA)(j) match { case (j1, a) => compile(f(a))(j1) }
     case Join(opA, opB, false) => j => {
-      val (j1, a) = self(opA)(j)
-      val (j2, b) = self(opB)(j1)
+      val (j1, a) = compile(opA)(j)
+      val (j2, b) = compile(opB)(j1)
       (j2, (a, b))
     }
 
-    case Map(opA, f, true)     => j => (j, f(self(opA)(j)._2))
-    case Bind(opA, f, true)    => j => self(opA)(j) match {
-      case (newJ, a) => (j, self(f(a))(newJ)._2)
+    case Map(opA, f, true)     => j => (j, f(compile(opA)(j)._2))
+    case Bind(opA, f, true)    => j => compile(opA)(j) match {
+      case (newJ, a) => (j, compile(f(a))(newJ)._2)
     }
-    case Join(opA, opB, true)  => j => (j, (self(opA)(j)._2, self(opB)(j)._2))
+    case Join(opA, opB, true)  => j => (j, (compile(opA)(j)._2, compile(opB)(j)._2))
   }
 
   def readNull(j: Json): Unit = if (j.isNull) () else throw new Exception("Something bad happened")
@@ -52,7 +52,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
   def readFields[A](opA: Op[A])(j: Json): Vector[(String, A)] = {
     val fs = j.asInstanceOf[Json.JObject].o.toVector
     val builder = Vector.newBuilder[(String, A)]
-    val d: Json => A = self(opA)(_)._2
+    val d: Json => A = compile(opA)(_)._2
 
     fs.foreach {
       case (k, v) =>
@@ -64,7 +64,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
   def readValues[A](opA: Op[A])(j: Json): Vector[A] = {
     val js = j.asInstanceOf[Json.JArray].a
     val builder = Vector.newBuilder[A]
-    val d: Json => A = self(opA)(_)._2
+    val d: Json => A = compile(opA)(_)._2
 
     js.foreach { j =>
       builder += d(j)
