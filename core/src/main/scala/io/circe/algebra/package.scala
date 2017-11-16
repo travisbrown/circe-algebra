@@ -1,6 +1,7 @@
 package io.circe
 
 import cats.Id
+import cats.data.NonEmptyList
 import cats.instances.either._
 import io.circe.numbers.BiggerDecimal
 
@@ -9,18 +10,25 @@ package object algebra {
   def readBoolean: Op[Boolean] = Op.ReadBoolean
   def readNumber: Op[BiggerDecimal] = Op.ReadNumber
   def readString: Op[String] = Op.ReadString
+  def readLong: Op[Long] = Op.ReadLong
+  def readDouble: Op[Double] = Op.ReadDouble
+
   def downField(key: String): Op[Unit] = Op.DownField(key)
   def downAt(index: Int): Op[Unit] = Op.DownAt(index)
 
   def readFields[A](opA: Op[A]): Op[Vector[(String, A)]] = Op.ReadFields(opA)
   def readValues[A](opA: Op[A]): Op[Vector[A]] = Op.ReadValues(opA)
 
-  def bracket[A](opA: Op[A]): Op[A] = Op.Bracket(opA)
+  def read[A](implicit decodeA: Decoder[A]): Op[A] = decodeA.op
+  def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = downField(key).then(decodeA.op).bracket
 
-  def read[A](implicit decodeA: Decoder[A]): Op[A] = bracket(decodeA.op)
-  def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = bracket(downField(key).flatMap(_ => decodeA.op))
-
-  val jsonEither: CirceInterpreter[Either[Failure, ?]] = new CirceInterpreter[Either[Failure, ?]]
-
-  val jsonYolo: Interpreter[Id, Json] = CirceYoloInterpreter
+  object interpreters {
+    val either: CirceInterpreter[Either[Error, ?]] = new CirceInterpreter[Either[Error, ?]]
+    val yolo: Interpreter[Id, Json] = CirceYoloInterpreter
+    val failFast: Interpreter[Either[DecodingFailure, ?], Json] = fast.FailFastInterpreter
+    val accumulating: Interpreter[Either[NonEmptyList[DecodingFailure], ?], Json] = fast.ErrorAccumulatingInterpreter
+    val failFastWithHistory: Interpreter[Either[DecodingFailure, ?], Json] = history.FailFastInterpreter
+    val accumulatingWithHistory: Interpreter[Either[NonEmptyList[DecodingFailure], ?], Json] =
+      history.ErrorAccumulatingInterpreter
+  }
 }
