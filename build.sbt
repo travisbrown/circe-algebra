@@ -1,3 +1,5 @@
+organization in ThisBuild := "io.circe"
+
 val circeVersion = "0.9.0-M2"
 
 val sharedSettings = Seq(
@@ -35,6 +37,7 @@ val root = project.in(file("."))
 
 lazy val core = project.in(file("core"))
   .settings(sharedSettings)
+  .settings(moduleName := "algebra")
 
 lazy val benchmarks = project.in(file("benchmarks"))
   .settings(sharedSettings)
