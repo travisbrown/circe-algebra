@@ -86,7 +86,7 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
   final def onReadFields[A](opA: Op[A]): Unit = if (cursor.isObject) {
     val orig = cursor
     val o = asObjectUnsafe
-    val fs = o.fields.iterator
+    val fs = o.keys.iterator
     val builder = Vector.newBuilder[(String, A)]
     var first = true
 
@@ -125,7 +125,7 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
   final def onReadMap[A](opA: Op[A]): Unit = if (cursor.isObject) {
     val orig = cursor
     val o = asObjectUnsafe
-    val fs = o.fields.iterator
+    val fs = o.keys.iterator
     val builder = new HashMap[String, A]()
     var first = true
 

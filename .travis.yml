@@ -1,6 +1,8 @@
 language: scala
 
 scala:
+  - 2.10.7
+  - 2.11.12
   - 2.12.4
 
 jdk:
@@ -11,8 +13,11 @@ cache:
     - $HOME/.ivy2/cache
     - $HOME/.sbt/boot
 
+install:
+  - pip install --user codecov
+
 script:
-  - sbt clean test scalastyle
+  - sbt ++$TRAVIS_SCALA_VERSION clean test scalastyle && codecov
 
   # See http://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
   # Tricks to avoid unnecessary cache updates
