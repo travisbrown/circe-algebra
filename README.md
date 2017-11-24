@@ -1,6 +1,9 @@
 # circe-algebra
 
 [![Build status](https://img.shields.io/travis/travisbrown/circe-algebra/master.svg)](https://travis-ci.org/travisbrown/circe-algebra)
+[![Coverage status](https://img.shields.io/codecov/c/github/travisbrown/circe-algebra/master.svg)](https://codecov.io/github/travisbrown/circe-algebra)
+[![Gitter](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/circe/circe)
+[![Maven Central](https://img.shields.io/maven-central/v/io.circe/circe-algebra_2.11.svg)](https://maven-badges.herokuapp.com/maven-central/io.circe/circe-algebra_2.11)
 
 This project contains a set of experiments related to [some proposed changes][circe-228] to [circe][circe]'s JSON
 decoding mechanism.
