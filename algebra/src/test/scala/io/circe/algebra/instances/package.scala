@@ -7,7 +7,7 @@ import io.circe.testing.instances._
 import org.scalacheck.{ Arbitrary, Cogen, Gen }
 
 package object instances {
-  implicit val cogenFailure: Cogen[DecodingFailure] = Cogen((_: DecodingFailure).hashCode.toLong)
+  //implicit val cogenFailure: Cogen[DecodingFailure] = Cogen((_: DecodingFailure).hashCode.toLong)
 
   implicit val eqFailure: Eq[DecodingFailure] = Eq.fromUniversalEquals
 
@@ -35,9 +35,9 @@ package object instances {
       }
   }
 
-  implicit def arbitraryDecoder[A: Arbitrary]: Arbitrary[Decoder[A]] = Arbitrary(
+  implicit def arbitraryAlgebraDecoder[A: Arbitrary]: Arbitrary[Decoder[A]] = Arbitrary(
     Arbitrary.arbitrary[Op[A]].map(Decoder.instance(_))
   )
 
-  implicit def eqDecoder[A: Eq]: Eq[Decoder[A]] = Eq.by(_.op)
+  implicit def eqAlgebraDecoder[A: Eq]: Eq[Decoder[A]] = Eq.by(_.op)
 }

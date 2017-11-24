@@ -17,7 +17,7 @@ sealed abstract class Op[A] {
   final def map[B](f: A => B): Op[B] = Op.Mapper(this, f, false)
   final def flatMap[B](f: A => Op[B]): Op[B] = Op.Bind(this, f, false)
   final def product[B](opB: Op[B]): Op[(A, B)] = Op.Join(this, opB, false)
-  final def map2[B, C](opB: Op[B])(f: (A, B) => C): Op[C] = product(opB).map(p => f(p._1, p._2))
+  final def map2[B, C](opB: Op[B])(f: (A, B) => C): Op[C] = product(opB).map(f.tupled)
   final def andThen[B](opB: Op[B]): Op[B] = Op.Then(this, opB, false)
 
   def fold[Z](folder: Op.Folder[Z]): Z
