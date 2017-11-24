@@ -20,7 +20,7 @@ package object algebra {
   def readValues[A](opA: Op[A]): Op[Vector[A]] = Op.ReadValues(opA)
 
   def read[A](implicit decodeA: Decoder[A]): Op[A] = decodeA.op
-  def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = downField(key).then(decodeA.op).bracket
+  def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = downField(key).andThen(decodeA.op).bracket
 
   object interpreters {
     val either: CirceInterpreter[Either[Error, ?]] = new CirceInterpreter[Either[Error, ?]]

@@ -6,14 +6,11 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.traverse._
 import io.circe.{ DecodingFailure, Error, Json }
-import io.circe.jawn
 import io.circe.numbers.BiggerDecimal
 
 class CirceInterpreter[F[_]](implicit M: MonadError[F, Error]) extends StateInterpreter[F, Json]
     with ParsingInterpreter[F, Json] with MonadErrorHelpers[F, Error] { self =>
   val F: MonadError[F, Error] = M
-
-  def parse(doc: String): F[Json] = fromEither(jawn.parse(doc))
 
   def readNull(j: Json): F[Unit] = if (j.isNull) F.pure(()) else F.raiseError(DecodingFailure("Expected null", Nil))
 
