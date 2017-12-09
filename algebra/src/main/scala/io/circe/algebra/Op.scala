@@ -107,9 +107,9 @@ object Op extends OpInstances {
   final case class Pure[A](value: A)                                           extends StrictOp[A] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onPure(value)
   }
-  final case class Fail[A](failure: DecodingFailure)                           extends StrictOp[A] {
+  /*final case class Fail[A](failure: DecodingFailure)                           extends StrictOp[A] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onFail(failure)
-  }
+  }*/
   final case class Mapper[A, B](opA: Op[A], f: A => B, isBracketed: Boolean)   extends CompositionOp[B] {
     final def bracket: Op[B] = if (isBracketed) this else copy(isBracketed = true)
     final def fold[Z](folder: Folder[Z]): Z = folder.onMap(opA, f, isBracketed)

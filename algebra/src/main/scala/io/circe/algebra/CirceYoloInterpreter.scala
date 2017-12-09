@@ -24,7 +24,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
     case ReadValues(opA)   => j => (j, readValues(opA)(j))
 
     case Pure(value)       => j => (j, value)
-    case Fail(failure)     => throw failure
+    //case Fail(failure)     => throw failure
 
     case Mapper(opA, f, false)    => j => compile(opA)(j) match { case (j1, a) => (j1, f(a)) }
     case Bind(opA, f, false)   => j => compile(opA)(j) match { case (j1, a) => compile(f(a))(j1) }
