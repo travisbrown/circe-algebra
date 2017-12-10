@@ -1,4 +1,4 @@
-package io.circe.algebra
+package io.circe.algebra.simple
 
 import cats.MonadError
 import cats.instances.vector._
@@ -6,6 +6,7 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.syntax.traverse._
 import io.circe.{ DecodingFailure, Json }
+import io.circe.algebra.Op
 import io.circe.numbers.BiggerDecimal
 
 class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure]) extends StateInterpreter[F, Json]

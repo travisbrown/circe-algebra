@@ -13,8 +13,8 @@ class DecodingBenchmarkSpec extends FlatSpec {
     assert(benchmark.decodeAccumulatingWithCursors === Foo.example)
   }
 
-  it should "correctly decode Foos using circe-algebra in Either mode" in {
-    assert(benchmark.decodeIntoEither === Foo.example)
+  it should "correctly decode Foos using circe-algebra in simple mode" in {
+    assert(benchmark.decodeSimple === Foo.example)
   }
 
   it should "correctly decode Foos using circe-algebra in fail-fast mode" in {

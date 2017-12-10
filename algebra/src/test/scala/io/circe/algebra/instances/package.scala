@@ -26,8 +26,8 @@ package object instances {
 
       js.forall { j =>
         Eq[Either[Error, A]].eqv(
-          interpreters.either.decode(j)(Decoder.instance(a)),
-          interpreters.either.decode(j)(Decoder.instance(b))
+          interpreters.simple.decode(j)(Decoder.instance(a)),
+          interpreters.simple.decode(j)(Decoder.instance(b))
         )
       }
   }
