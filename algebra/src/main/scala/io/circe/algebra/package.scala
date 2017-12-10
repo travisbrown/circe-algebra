@@ -2,6 +2,7 @@ package io.circe
 
 import cats.data.NonEmptyList
 import cats.instances.either._
+import io.circe.algebra.simple.CirceInterpreter
 import io.circe.numbers.BiggerDecimal
 
 package object algebra {
@@ -22,7 +23,7 @@ package object algebra {
   def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = downField(key).andThen(decodeA.op).bracket
 
   object interpreters {
-    val either: CirceInterpreter[Either[DecodingFailure, ?]] = new CirceInterpreter[Either[DecodingFailure, ?]]
+    val simple: Interpreter[Either[DecodingFailure, ?], Json] = new CirceInterpreter[Either[DecodingFailure, ?]]
     val failFast: Interpreter[Either[DecodingFailure, ?], Json] = fast.FailFastInterpreter
     val accumulating: Interpreter[Either[NonEmptyList[DecodingFailure], ?], Json] = fast.ErrorAccumulatingInterpreter
     val failFastWithHistory: Interpreter[Either[DecodingFailure, ?], Json] = history.FailFastInterpreter

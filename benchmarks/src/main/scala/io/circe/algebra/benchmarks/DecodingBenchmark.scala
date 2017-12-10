@@ -78,7 +78,7 @@ class DecodingBenchmark {
   def decodeAccumulatingWithHistory: Foo = interpreters.accumulating.decode[Foo](Foo.exampleJson).right.get
 
   @Benchmark
-  def decodeIntoEither: Foo = interpreters.either.decode[Foo](Foo.exampleJson).right.get
+  def decodeSimple: Foo = interpreters.simple.decode[Foo](Foo.exampleJson).right.get
 
   @Benchmark
   def decodeFree: Foo = io.circe.algebra.free.decode[Foo](Foo.exampleJson).right.get

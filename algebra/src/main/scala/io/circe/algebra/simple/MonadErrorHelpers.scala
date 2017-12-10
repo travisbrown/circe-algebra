@@ -1,4 +1,4 @@
-package io.circe.algebra
+package io.circe.algebra.simple
 
 import cats.MonadError
 

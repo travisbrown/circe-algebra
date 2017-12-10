@@ -1,8 +1,9 @@
-package io.circe.algebra
+package io.circe.algebra.simple
 
 import cats.MonadError
 import cats.data.{ IndexedStateT, StateT }
 import io.circe.DecodingFailure
+import io.circe.algebra.{ Interpreter, Op }
 import io.circe.numbers.BiggerDecimal
 
 abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, DecodingFailure]) extends Interpreter[F, J] { self =>
