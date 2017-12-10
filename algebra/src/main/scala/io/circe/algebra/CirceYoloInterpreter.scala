@@ -1,7 +1,7 @@
 package io.circe.algebra
 
 import cats.Id
-import io.circe.Json
+import io.circe.{ DecodingFailure, Json }
 import io.circe.numbers.BiggerDecimal
 
 object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
@@ -26,8 +26,12 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
     case Pure(value)       => j => (j, value)
     case Fail(failure)     => throw failure
 
-    case Mapper(opA, f, false)    => j => compile(opA)(j) match { case (j1, a) => (j1, f(a)) }
+    case Mapper(opA, f, false) => j => compile(opA)(j) match { case (j1, a) => (j1, f(a)) }
     case Bind(opA, f, false)   => j => compile(opA)(j) match { case (j1, a) => compile(f(a))(j1) }
+    case Handle(opA, f, _) => j => try compile(opA)(j) catch {
+      case df: DecodingFailure => compile(f(df))(j)
+    }
+
     case Join(opA, opB, false) => j => {
       val (j1, a) = compile(opA)(j)
       val (j2, b) = compile(opB)(j1)
@@ -43,6 +47,7 @@ object CirceYoloInterpreter extends Interpreter[Id, Json] { self =>
     case Bind(opA, f, true)    => j => compile(opA)(j) match {
       case (newJ, a) => (j, compile(f(a))(newJ)._2)
     }
+
     case Join(opA, opB, true)  => j => (j, (compile(opA)(j)._2, compile(opB)(j)._2))
     case Then(opA, opB, true)  => j => {
       val j1 = compile(opA)(j)._1

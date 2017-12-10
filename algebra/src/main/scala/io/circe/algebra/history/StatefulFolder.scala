@@ -19,7 +19,7 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
 
   private[this] var history: List[CursorOp] = Nil
 
-  private[this] var cursor: Json = c
+  protected[this] var cursor: Json = c
   private[this] def asBooleanUnsafe: Boolean = cursor.asInstanceOf[Json.JBoolean].value
   private[this] def asNumberUnsafe: JsonNumber = cursor.asInstanceOf[Json.JNumber].value
   private[this] def asStringUnsafe: String = cursor.asInstanceOf[Json.JString].value

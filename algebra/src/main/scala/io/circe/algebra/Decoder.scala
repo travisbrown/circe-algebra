@@ -42,10 +42,8 @@ object Decoder {
 
     def raiseError[A](e: DecodingFailure): Decoder[A] = Decoder.instance(Op.opMonadError.raiseError(e))
 
-    def handleErrorWith[A](fa: Decoder[A])(f: DecodingFailure => Decoder[A]): Decoder[A] = fa.op match {
-      case Op.Fail(failure) => f(failure)
-      case other => fa
-    }
+    def handleErrorWith[A](fa: Decoder[A])(f: DecodingFailure => Decoder[A]): Decoder[A] =
+      Decoder.instance(Op.opMonadError.handleErrorWith(fa.op)(df => f(df).op))
 
     def tailRecM[A, B](a: A)(f: A => Decoder[Either[A, B]]): Decoder[B] =
       Decoder.instance(Op.opMonadError.tailRecM(a)(a => f(a).op))
