@@ -1,6 +1,5 @@
 package io.circe
 
-import cats.Id
 import cats.data.NonEmptyList
 import cats.instances.either._
 import io.circe.numbers.BiggerDecimal
@@ -24,7 +23,6 @@ package object algebra {
 
   object interpreters {
     val either: CirceInterpreter[Either[DecodingFailure, ?]] = new CirceInterpreter[Either[DecodingFailure, ?]]
-    val yolo: Interpreter[Id, Json] = CirceYoloInterpreter
     val failFast: Interpreter[Either[DecodingFailure, ?], Json] = fast.FailFastInterpreter
     val accumulating: Interpreter[Either[NonEmptyList[DecodingFailure], ?], Json] = fast.ErrorAccumulatingInterpreter
     val failFastWithHistory: Interpreter[Either[DecodingFailure, ?], Json] = history.FailFastInterpreter
