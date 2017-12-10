@@ -58,6 +58,7 @@ object Op extends OpInstances {
     def onFail(failure: DecodingFailure): Z
     def onMap[A, B](opA: Op[A], f: A => B, isBracketed: Boolean): Z
     def onBind[A, B](opA: Op[A], f: A => Op[B], isBracketed: Boolean): Z
+    def onHandle[A](opA: Op[A], f: DecodingFailure => Op[A], isBracketed: Boolean): Z
     def onJoin[A, B](opA: Op[A], opB: Op[B], isBracketed: Boolean): Z
     def onThen[A, B](opA: Op[A], opB: Op[B], isBracketed: Boolean): Z
   }
@@ -117,6 +118,10 @@ object Op extends OpInstances {
   final case class Bind[A, B](opA: Op[A], f: A => Op[B], isBracketed: Boolean) extends CompositionOp[B] {
     final def bracket: Op[B] = if (isBracketed) this else copy(isBracketed = true)
     final def fold[Z](folder: Folder[Z]): Z = folder.onBind(opA, f, isBracketed)
+  }
+  final case class Handle[A](opA: Op[A], f: DecodingFailure => Op[A], isBracketed: Boolean) extends CompositionOp[A] {
+    final def bracket: Op[A] = if (isBracketed) this else copy(isBracketed = true)
+    final def fold[Z](folder: Folder[Z]): Z = folder.onHandle(opA, f, isBracketed)
   }
   final case class Join[A, B](opA: Op[A], opB: Op[B], isBracketed: Boolean)    extends CompositionOp[(A, B)] {
     final def bracket: Op[(A, B)] = if (isBracketed) this else copy(isBracketed = true)

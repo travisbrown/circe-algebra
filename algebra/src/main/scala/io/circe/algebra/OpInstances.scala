@@ -15,10 +15,7 @@ abstract class OpInstances {
 
     def raiseError[A](e: DecodingFailure): Op[A] = Fail(e)
 
-    def handleErrorWith[A](fa: Op[A])(f: DecodingFailure => Op[A]): Op[A] = fa match {
-      case Fail(failure) => f(failure)
-      case other => other
-    }
+    def handleErrorWith[A](fa: Op[A])(f: DecodingFailure => Op[A]): Op[A] = Handle[A](fa, f, false)
 
     // TODO: This isn't actually stack-safe.
     def tailRecM[A, B](a: A)(f: A => Op[Either[A, B]]): Op[B] = tailRecMHelper(f(a))(f)
@@ -56,6 +53,7 @@ abstract class OpInstances {
       case Fail(failure)       => Fail(failure)
       case m @ Mapper(_, _, _) => mapHelper(m)(f)
       case b @ Bind(_, _, _)   => bindHelper(b)(f)
+      case Handle(o, h, b) => Handle(tailRecMHelper(o)(f), df => tailRecMHelper(h(df))(f), b)
       case t @ Then(_, _, _)   => thenHelper(t)(f)
     }
   }

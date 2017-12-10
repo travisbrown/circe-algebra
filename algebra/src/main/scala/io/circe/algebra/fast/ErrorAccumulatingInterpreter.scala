@@ -18,6 +18,14 @@ final object ErrorAccumulatingInterpreter
     final def failure: NonEmptyList[DecodingFailure] =
       NonEmptyList.fromListUnsafe(value.asInstanceOf[Builder[DecodingFailure, List[DecodingFailure]]].result)
 
+    final def onHandle[A](opA: Op[A], f: DecodingFailure => Op[A], isBracketed: Boolean): Unit = {
+      val orig = cursor
+
+      opA.fold(this)
+      if (failed) f(failure.head).fold(this)
+      if (isBracketed) cursor = orig
+    }
+
     final def onFail(failure: DecodingFailure): Unit = {
       if (!failed) {
         value = List.newBuilder[DecodingFailure]

@@ -23,7 +23,7 @@ package object algebra {
   def get[A](key: String)(implicit decodeA: Decoder[A]): Op[A] = downField(key).andThen(decodeA.op).bracket
 
   object interpreters {
-    val either: CirceInterpreter[Either[Error, ?]] = new CirceInterpreter[Either[Error, ?]]
+    val either: CirceInterpreter[Either[DecodingFailure, ?]] = new CirceInterpreter[Either[DecodingFailure, ?]]
     val yolo: Interpreter[Id, Json] = CirceYoloInterpreter
     val failFast: Interpreter[Either[DecodingFailure, ?], Json] = fast.FailFastInterpreter
     val accumulating: Interpreter[Either[NonEmptyList[DecodingFailure], ?], Json] = fast.ErrorAccumulatingInterpreter

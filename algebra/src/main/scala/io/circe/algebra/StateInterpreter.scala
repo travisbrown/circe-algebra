@@ -1,18 +1,17 @@
 package io.circe.algebra
 
-import cats.{ Monad, MonadError }
+import cats.MonadError
 import cats.data.{ IndexedStateT, StateT }
-import cats.syntax.semigroupal._
-import io.circe.Error
+import io.circe.DecodingFailure
 import io.circe.numbers.BiggerDecimal
 
-abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, Error]) extends Interpreter[F, J] { self =>
+abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, DecodingFailure]) extends Interpreter[F, J] { self =>
   import Op._
 
   type S[x] = StateT[F, J, x]
 
-  private[this] implicit val stateMonad: Monad[S] =
-    IndexedStateT.catsDataMonadForIndexedStateT[F, J](M)
+  private[this] implicit val stateMonad: MonadError[S, DecodingFailure] =
+    IndexedStateT.catsDataMonadErrorForIndexedStateT[F, J, DecodingFailure](M)
 
   final def apply[A](op: Op[A])(j: J): F[A] = compile(op).runA(j)
 
@@ -33,11 +32,18 @@ abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, Error]) exten
     case Fail(failure)         => StateT.lift(M.raiseError(failure))
     case Mapper(opA, f, false) => self.compile(opA).map(f)
     case Bind(opA, f, false)   => self.compile(opA).flatMap(a => self.compile(f(a)))
+    case Handle(opA, f, false) => stateMonad.handleErrorWith(self.compile(opA))(df => self.compile(f(df)))
     case Join(opA, opB, false) => stateMonad.product(self.compile(opA), self.compile(opB))
     case Then(opA, opB, false) => StateT.get[F, J].flatMap(j => self.compile(opA).flatMap(_ => self.compile(opB)))
     case Mapper(opA, f, true)  => StateT.get[F, J].flatMap(j => self.compile(opA).map(f).modify(_ => j))
     case Bind(opA, f, true)    =>
       StateT.get[F, J].flatMap(j => self.compile(opA).flatMap(a => self.compile(f(a))).modify(_ => j))
+
+    case Handle(opA, f, true)    =>
+      StateT.get[F, J].flatMap(j =>
+        stateMonad.handleErrorWith(self.compile(opA))(df => self.compile(f(df))).modify(_ => j)
+      )
+
     case Join(opA, opB, true)  =>
       StateT.get[F, J].flatMap(j => stateMonad.product(self.compile(opA), self.compile(opB)).modify(_ => j))
     case Then(opA, opB, true)  =>
