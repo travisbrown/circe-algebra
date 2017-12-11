@@ -5,16 +5,17 @@ import io.circe.{ DecodingFailure, Json }
 import io.circe.algebra.{ DirectInterpreter, Op }
 import scala.collection.mutable.Builder
 
-final object ErrorAccumulatingInterpreter
+abstract class ErrorAccumulatingInterpreter
     extends DirectInterpreter[Either[NonEmptyList[DecodingFailure], ?], Json] { self =>
+  protected[this] def folder[Z](j: Json): StatefulFolder[NonEmptyList[DecodingFailure], Z]
+
   def apply[A](op: Op[A])(j: Json): Either[NonEmptyList[DecodingFailure], A] = {
-    val state = new ErrorAccumulatingStatefulFolder[A](j)
+    val state = folder(j)
     op.fold(state)
     state.result
   }
 
-  private[this] class ErrorAccumulatingStatefulFolder[Z](c: Json)
-      extends StatefulFolder[NonEmptyList[DecodingFailure], Z](c) {
+  protected[this] trait ErrorAccumulatingStatefulFolder[Z] { self: StatefulFolder[NonEmptyList[DecodingFailure], Z] =>
     final def failure: NonEmptyList[DecodingFailure] =
       NonEmptyList.fromListUnsafe(value.asInstanceOf[Builder[DecodingFailure, List[DecodingFailure]]].result)
 
@@ -33,5 +34,17 @@ final object ErrorAccumulatingInterpreter
       value.asInstanceOf[Builder[DecodingFailure, List[DecodingFailure]]] += failure
       failed = true
     }
+  }
+}
+
+object ErrorAccumulatingInterpreter {
+  object noHistory extends ErrorAccumulatingInterpreter {
+    protected[this] def folder[Z](j: Json): StatefulFolder[NonEmptyList[DecodingFailure], Z] =
+      new StatefulFolder.NoHistory[NonEmptyList[DecodingFailure], Z](j) with ErrorAccumulatingStatefulFolder[Z] {}
+  }
+
+  object withHistory extends ErrorAccumulatingInterpreter {
+    protected[this] def folder[Z](j: Json): StatefulFolder[NonEmptyList[DecodingFailure], Z] =
+      new StatefulFolder.WithHistory[NonEmptyList[DecodingFailure], Z](j) with ErrorAccumulatingStatefulFolder[Z] {}
   }
 }

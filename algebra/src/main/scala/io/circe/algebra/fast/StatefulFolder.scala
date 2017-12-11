@@ -1,31 +1,30 @@
 package io.circe.algebra.fast
 
-import io.circe.{ DecodingFailure, Json, JsonNumber, JsonObject }
+import io.circe.{ CursorOp, DecodingFailure, Json, JsonNumber, JsonObject }
 import io.circe.algebra.Op
 import scala.collection.mutable.HashMap
 
 abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
-  final def result: Either[E, Z] = if (failed) {
+  def result: Either[E, Z] = if (failed) {
     Left(failure)
   } else {
     Right(value.asInstanceOf[Z])
   }
 
-  protected[this] def failure: E
-
   protected[this] var value: Any = null
+  protected[this] var cursor: Json = c
   protected[this] var failed: Boolean = false
   protected[this] var halted: Boolean = false
 
-  protected[this] var cursor: Json = c
-  private[this] def asBooleanUnsafe: Boolean = cursor.asInstanceOf[Json.JBoolean].value
-  private[this] def asNumberUnsafe: JsonNumber = cursor.asInstanceOf[Json.JNumber].value
-  private[this] def asStringUnsafe: String = cursor.asInstanceOf[Json.JString].value
-  private[this] def asObjectUnsafe: JsonObject = cursor.asInstanceOf[Json.JObject].value
-  private[this] def asArrayUnsafe: Vector[Json] = cursor.asInstanceOf[Json.JArray].value
+  protected[this] def failure: E
+  protected[this] def fail(message: String): Unit
 
-  private[this] def valueAsUnsafe[A]: A = value.asInstanceOf[A]
-  private[this] def fail(message: String): Unit = onFail(DecodingFailure(message, Nil))
+  protected[this] def valueAsUnsafe[A]: A = value.asInstanceOf[A]
+  protected[this] def asBooleanUnsafe: Boolean = cursor.asInstanceOf[Json.JBoolean].value
+  protected[this] def asNumberUnsafe: JsonNumber = cursor.asInstanceOf[Json.JNumber].value
+  protected[this] def asStringUnsafe: String = cursor.asInstanceOf[Json.JString].value
+  protected[this] def asObjectUnsafe: JsonObject = cursor.asInstanceOf[Json.JObject].value
+  protected[this] def asArrayUnsafe: Vector[Json] = cursor.asInstanceOf[Json.JArray].value
 
   final def onReadNull: Unit = if (cursor.isNull) {
     if (!failed) value = ()
@@ -54,78 +53,9 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
     value = asNumberUnsafe.toDouble
   } else fail("Expected number")
 
-  final def onDownField(key: String): Unit = if (cursor.isObject) {
-    asObjectUnsafe(key) match {
-      case Some(v) =>
-        cursor = v
-        if (!failed) value = ()
-      case None => fail(s"Expected key: $key")
-    }
-  } else fail("Expected object")
-
-  final def onDownAt(index: Int): Unit = if (cursor.isArray) {
-    val js = asArrayUnsafe
-
-    if (js.size > index) {
-      cursor = js(index)
-      if (!failed) value = ()
-    } else fail(s"Expected index: $index")
-  } else fail("Expected array")
-
   final def onPure[A](a: A): Unit = {
     value = a
   }
-
-  final def onReadFields[A](opA: Op[A]): Unit = if (cursor.isObject) {
-    val orig = cursor
-    val o = asObjectUnsafe
-    val fs = o.keys.iterator
-    val builder = Vector.newBuilder[(String, A)]
-
-    while (fs.hasNext && !halted) {
-      val k = fs.next()
-      val v = o(k).get
-      cursor = v
-      opA.fold(this)
-      if (!failed) builder += (k -> valueAsUnsafe[A])
-    }
-
-    cursor = orig
-    if (!failed) value = builder.result()
-  } else fail("Expected object")
-
-  final def onReadValues[A](opA: Op[A]): Unit = if (cursor.isArray) {
-    val orig = cursor
-    val js = asArrayUnsafe.iterator
-    val builder = Vector.newBuilder[A]
-
-    while (js.hasNext && !halted) {
-      cursor = js.next()
-      opA.fold(this)
-      if (!failed) builder += valueAsUnsafe[A]
-    }
-
-    cursor = orig
-    if (!failed) value = builder.result()
-  } else fail("Expected array")
-
-  final def onReadMap[A](opA: Op[A]): Unit = if (cursor.isObject) {
-    val orig = cursor
-    val o = asObjectUnsafe
-    val fs = o.keys.iterator
-    val builder = new HashMap[String, A]()
-
-    while (fs.hasNext && !halted) {
-      val k = fs.next()
-      val v = o(k).get
-      cursor = v
-      opA.fold(this)
-      if (!failed) builder(k) = valueAsUnsafe[A]
-    }
-
-    cursor = orig
-    if (!failed) value = builder.toMap
-  } else fail("Expected object")
 
   final def onMap[A, B](opA: Op[A], f: A => B, isBracketed: Boolean): Unit = {
     val orig = cursor
@@ -162,5 +92,169 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
     opA.fold(this)
     if (!halted) opB.fold(this)
     if (isBracketed) cursor = orig
+  }
+}
+
+object StatefulFolder {
+  abstract class NoHistory[E, Z](c: Json) extends StatefulFolder[E, Z](c) {
+    protected[this] def fail(message: String): Unit = onFail(DecodingFailure(message, Nil))
+
+    final def onDownField(key: String): Unit = if (cursor.isObject) {
+      asObjectUnsafe(key) match {
+        case Some(v) =>
+          cursor = v
+          if (!failed) value = ()
+        case None => fail(s"Expected key: $key")
+      }
+    } else fail("Expected object")
+
+    final def onDownAt(index: Int): Unit = if (cursor.isArray) {
+      val js = asArrayUnsafe
+
+      if (js.size > index) {
+        cursor = js(index)
+        if (!failed) value = ()
+      } else fail(s"Expected index: $index")
+    } else fail("Expected array")
+
+    final def onReadFields[A](opA: Op[A]): Unit = if (cursor.isObject) {
+      val orig = cursor
+      val o = asObjectUnsafe
+      val fs = o.keys.iterator
+      val builder = Vector.newBuilder[(String, A)]
+
+      while (fs.hasNext && !halted) {
+        val k = fs.next()
+        val v = o(k).get
+        cursor = v
+        opA.fold(this)
+        if (!failed) builder += (k -> valueAsUnsafe[A])
+      }
+
+      cursor = orig
+      if (!failed) value = builder.result()
+    } else fail("Expected object")
+
+    final def onReadValues[A](opA: Op[A]): Unit = if (cursor.isArray) {
+      val orig = cursor
+      val js = asArrayUnsafe.iterator
+      val builder = Vector.newBuilder[A]
+
+      while (js.hasNext && !halted) {
+        cursor = js.next()
+        opA.fold(this)
+        if (!failed) builder += valueAsUnsafe[A]
+      }
+
+      cursor = orig
+      if (!failed) value = builder.result()
+    } else fail("Expected array")
+
+    final def onReadMap[A](opA: Op[A]): Unit = if (cursor.isObject) {
+      val orig = cursor
+      val o = asObjectUnsafe
+      val fs = o.keys.iterator
+      val builder = new HashMap[String, A]()
+
+      while (fs.hasNext && !halted) {
+        val k = fs.next()
+        val v = o(k).get
+        cursor = v
+        opA.fold(this)
+        if (!failed) builder(k) = valueAsUnsafe[A]
+      }
+
+      cursor = orig
+      if (!failed) value = builder.toMap
+    } else fail("Expected object")
+  }
+
+  abstract class WithHistory[E, Z](c: Json) extends StatefulFolder[E, Z](c) {
+    private[this] var history: List[CursorOp] = Nil
+
+    protected[this] def fail(message: String): Unit = {
+      val h = history
+      onFail(DecodingFailure(message, h))
+    }
+
+    final def onDownField(key: String): Unit = if (cursor.isObject) {
+      asObjectUnsafe(key) match {
+        case Some(v) =>
+          cursor = v
+          history = CursorOp.DownField(key) :: history
+          if (!failed) value = ()
+        case None => fail(s"Expected key: $key")
+      }
+    } else fail("Expected object")
+
+    final def onDownAt(index: Int): Unit = if (cursor.isArray) {
+      val js = asArrayUnsafe
+
+      if (js.size > index) {
+        cursor = js(index)
+        history = CursorOp.DownN(index) :: history
+        if (!failed) value = ()
+      } else fail(s"Expected index: $index")
+    } else fail("Expected array")
+
+    final def onReadFields[A](opA: Op[A]): Unit = if (cursor.isObject) {
+      val orig = cursor
+      val o = asObjectUnsafe
+      val fs = o.keys.iterator
+      val builder = Vector.newBuilder[(String, A)]
+      var first = true
+
+      while (fs.hasNext && !halted) {
+        val k = fs.next()
+        val v = o(k).get
+        cursor = v
+        history = CursorOp.DownField(k) :: (if (first) history else history.tail)
+
+        opA.fold(this)
+        if (!failed) builder += (k -> valueAsUnsafe[A])
+        first = false
+      }
+
+      cursor = orig
+      if (!failed) value = builder.result()
+    } else fail("Expected object")
+
+    final def onReadValues[A](opA: Op[A]): Unit = if (cursor.isArray) {
+      val orig = cursor
+      val js = asArrayUnsafe.iterator
+      val builder = Vector.newBuilder[A]
+      history = CursorOp.DownArray :: history
+
+      while (js.hasNext && !halted) {
+        cursor = js.next()
+        opA.fold(this)
+        history = CursorOp.MoveRight :: history
+        if (!failed) builder += valueAsUnsafe[A]
+      }
+
+      cursor = orig
+      if (!failed) value = builder.result()
+    } else fail("Expected array")
+
+    final def onReadMap[A](opA: Op[A]): Unit = if (cursor.isObject) {
+      val orig = cursor
+      val o = asObjectUnsafe
+      val fs = o.keys.iterator
+      val builder = new HashMap[String, A]()
+      var first = true
+
+      while (fs.hasNext && !halted) {
+        val k = fs.next()
+        val v = o(k).get
+        cursor = v
+        history = CursorOp.DownField(k) :: (if (first) history else history.tail)
+        opA.fold(this)
+        if (!failed) builder(k) = valueAsUnsafe[A]
+        first = false
+      }
+
+      cursor = orig
+      if (!failed) value = builder.toMap
+    } else fail("Expected object")
   }
 }
