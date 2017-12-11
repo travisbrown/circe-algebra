@@ -25,9 +25,9 @@ object Foo {
 
   implicit val decodeFooA: DecoderA[Foo] = DecoderA.instance(
     Apply[Op].map3(
-      get[Double]("f"),
-      get[Map[String, Boolean]]("m"),
-      downField("nested").get[Vector[Long]]("v")
+      ops.get[Double]("f"),
+      ops.get[Map[String, Boolean]]("m"),
+      ops.downField("nested").get[Vector[Long]]("v")
     )(Foo(_, _, _))
   )
 

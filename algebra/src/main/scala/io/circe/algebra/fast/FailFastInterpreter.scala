@@ -3,14 +3,16 @@ package io.circe.algebra.fast
 import io.circe.{ DecodingFailure, Json }
 import io.circe.algebra.{ DirectInterpreter, Op }
 
-final object FailFastInterpreter extends DirectInterpreter[Either[DecodingFailure, ?], Json] { self =>
+abstract class FailFastInterpreter extends DirectInterpreter[Either[DecodingFailure, ?], Json] { self =>
+  protected[this] def folder[Z](j: Json): StatefulFolder[DecodingFailure, Z]
+
   def apply[A](op: Op[A])(j: Json): Either[DecodingFailure, A] = {
-    val state = new FailFastStatefulFolder[A](j)
+    val state = folder(j)
     op.fold(state)
     state.result
   }
 
-  private[this] class FailFastStatefulFolder[Z](c: Json) extends StatefulFolder[DecodingFailure, Z](c) {
+  protected[this] trait FailFastStatefulFolder[Z] { self: StatefulFolder[DecodingFailure, Z] =>
     final def failure: DecodingFailure = value.asInstanceOf[DecodingFailure]
 
     final def onHandle[A](opA: Op[A], f: DecodingFailure => Op[A], isBracketed: Boolean): Unit = {
@@ -26,5 +28,17 @@ final object FailFastInterpreter extends DirectInterpreter[Either[DecodingFailur
       failed = true
       halted = true
     }
+  }
+}
+
+object FailFastInterpreter {
+  object noHistory extends FailFastInterpreter {
+    protected[this] def folder[Z](j: Json): StatefulFolder[DecodingFailure, Z] =
+      new StatefulFolder.NoHistory[DecodingFailure, Z](j) with FailFastStatefulFolder[Z] {}
+  }
+
+  object withHistory extends FailFastInterpreter {
+    protected[this] def folder[Z](j: Json): StatefulFolder[DecodingFailure, Z] =
+      new StatefulFolder.WithHistory[DecodingFailure, Z](j) with FailFastStatefulFolder[Z] {}
   }
 }
