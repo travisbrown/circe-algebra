@@ -16,5 +16,5 @@ class OpSpec extends FunSuite with Discipline {
   // checkAll("MonadError[Ops]", MonadErrorTests[Op, Failure].monadError[Int, Int, Int])
 
   checkAll("Monad[Op]", MonadTests[Op].stackUnsafeMonad[Int, Int, Int])
-  checkAll("ApplicativeError[Ops]", ApplicativeErrorTests[Op, DecodingFailure].applicativeError[Int, Int, Int])
+  checkAll("ApplicativeError[Op]", ApplicativeErrorTests[Op, DecodingFailure].applicativeError[Int, Int, Int])
 }

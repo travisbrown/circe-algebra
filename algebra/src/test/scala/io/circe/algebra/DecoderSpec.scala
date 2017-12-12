@@ -16,5 +16,5 @@ class DecoderSpec extends FunSuite with Discipline {
   // checkAll("MonadError[Decoder]", MonadErrorTests[Decoder, Failure].monadError[Int, Int, Int])
 
   checkAll("Monad[Decoder]", MonadTests[Decoder].stackUnsafeMonad[Int, Int, Int])
-  checkAll("ApplicativeError[Ops]", ApplicativeErrorTests[Decoder, DecodingFailure].applicativeError[Int, Int, Int])
+  checkAll("ApplicativeError[Decoder]", ApplicativeErrorTests[Decoder, DecodingFailure].applicativeError[Int, Int, Int])
 }
