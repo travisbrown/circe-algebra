@@ -9,9 +9,13 @@ import io.circe.{ DecodingFailure, Json }
 import io.circe.algebra.Op
 import io.circe.numbers.BiggerDecimal
 
-class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure]) extends StateInterpreter[F, Json]
-    with MonadErrorHelpers[F, DecodingFailure] { self =>
+class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure]) extends StateInterpreter[F, Json] { self =>
   val F: MonadError[F, DecodingFailure] = M
+
+  private[this] def fromOption[A](option: Option[A])(failure: DecodingFailure): F[A] = option match {
+    case Some(value) => F.pure(value)
+    case None => F.raiseError(failure)
+  }
 
   def readNull(j: Json): F[Unit] = if (j.isNull) F.pure(()) else F.raiseError(DecodingFailure("Expected null", Nil))
 
