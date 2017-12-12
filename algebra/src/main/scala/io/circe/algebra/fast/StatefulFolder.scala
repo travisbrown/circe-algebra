@@ -62,6 +62,8 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
   }
 
   final def onPure[A](a: A): Unit = {
+    failed = false
+    halted = false
     value = a
   }
 

@@ -55,12 +55,17 @@ val root = project.in(file("."))
       "io.circe" %% "circe-literal" % circeVersion
     )
   )
-  .aggregate(algebra, benchmarks, free)
-  .dependsOn(algebra)
+  .aggregate(algebra, benchmarks, free, simple)
+  .dependsOn(algebra, free, simple)
 
 lazy val algebra = project.in(file("algebra"))
   .settings(moduleName := "circe-algebra")
   .settings(sharedSettings)
+
+lazy val simple = project.in(file("simple"))
+  .settings(moduleName := "circe-algebra-simple")
+  .settings(sharedSettings ++ noPublishSettings)
+  .dependsOn(algebra)
 
 lazy val free = project.in(file("free"))
   .settings(
@@ -74,7 +79,7 @@ lazy val benchmarks = project.in(file("benchmarks"))
   .settings(sharedSettings ++ noPublishSettings)
   .settings(mainClass in assembly := Some("io.circe.algebra.benchmarks.DecodingApp"))
   .enablePlugins(JmhPlugin)
-  .dependsOn(algebra, free)
+  .dependsOn(algebra, free, simple)
 
 lazy val noPublishSettings = Seq(
   publish := {},

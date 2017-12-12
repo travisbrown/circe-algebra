@@ -23,7 +23,10 @@ abstract class ErrorAccumulatingInterpreter
       val orig = cursor
 
       opA.fold(this)
-      if (failed) f(failure.head).fold(this)
+      if (failed) {
+        failed = false
+        f(failure.head).fold(this)
+      }
       if (isBracketed) cursor = orig
     }
 

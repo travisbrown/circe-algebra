@@ -1,5 +1,6 @@
 package io.circe.algebra
 
+import cats.data.NonEmptyList
 import cats.instances.either._
 import cats.kernel.Eq
 import io.circe.{ DecodingFailure, Error, Json }
@@ -25,9 +26,13 @@ package object instances {
       val js = arbitraryValues[Json].take(8)
 
       js.forall { j =>
-        Eq[Either[Error, A]].eqv(
-          interpreters.simple.decode(j)(Decoder.instance(a)),
-          interpreters.simple.decode(j)(Decoder.instance(b))
+        /*Eq[Either[NonEmptyList[DecodingFailure], A]].eqv(
+          interpreters.accumulating.decode(j)(Decoder.instance(a)),
+          interpreters.accumulating.decode(j)(Decoder.instance(b))
+        ) && */
+        Eq[Either[DecodingFailure, A]].eqv(
+          interpreters.failFast.decode(j)(Decoder.instance(a)),
+          interpreters.failFast.decode(j)(Decoder.instance(b))
         )
       }
   }

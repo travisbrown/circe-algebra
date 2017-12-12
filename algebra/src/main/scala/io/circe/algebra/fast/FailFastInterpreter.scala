@@ -19,7 +19,10 @@ abstract class FailFastInterpreter extends DirectInterpreter[Either[DecodingFail
       val orig = cursor
 
       opA.fold(this)
-      if (failed) f(failure).fold(this)
+      if (failed) {
+        failed = false
+        f(failure).fold(this)
+      }
       if (isBracketed) cursor = orig
     }
 
