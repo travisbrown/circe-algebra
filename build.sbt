@@ -49,7 +49,12 @@ val sharedSettings = Seq(
 
 val root = project.in(file("."))
   .settings(sharedSettings)
-  .settings(libraryDependencies += "io.circe" %% "circe-literal" % circeVersion)
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-jawn" % circeVersion,
+      "io.circe" %% "circe-literal" % circeVersion
+    )
+  )
   .aggregate(algebra, benchmarks, free)
   .dependsOn(algebra)
 
