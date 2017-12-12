@@ -1,7 +1,7 @@
 package io.circe.algebra.fast
 
 import io.circe.{ CursorOp, DecodingFailure, Json, JsonNumber, JsonObject }
-import io.circe.algebra.Op
+import io.circe.algebra.{ NavigationOp, Op }
 import scala.collection.mutable.HashMap
 
 abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
@@ -16,8 +16,10 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
   protected[this] var failed: Boolean = false
   protected[this] var halted: Boolean = false
 
+  protected[this] var navigationFailure: NavigationOp = null
+
   protected[this] def failure: E
-  protected[this] def fail(message: String): Unit
+  protected[this] def fail(message: String, op: NavigationOp = null): Unit
 
   protected[this] def valueAsUnsafe[A]: A = value.asInstanceOf[A]
   protected[this] def asBooleanUnsafe: Boolean = cursor.asInstanceOf[Json.JBoolean].value
@@ -53,6 +55,12 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
     value = asNumberUnsafe.toDouble
   } else fail("Expected number")
 
+  final def onInspectNavigationFailure: Unit = {
+    failed = false
+    halted = false
+    value = Option(navigationFailure)
+  }
+
   final def onPure[A](a: A): Unit = {
     value = a
   }
@@ -77,7 +85,7 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
     val orig = cursor
     opA.fold(this)
 
-    if (!halted) {
+    if (!halted || navigationFailure.ne(null)) {
       val x = value
       opB.fold(this)
 
@@ -90,21 +98,25 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
     val orig = cursor
 
     opA.fold(this)
-    if (!halted) opB.fold(this)
+    if (!halted || navigationFailure.ne(null)) opB.fold(this)
     if (isBracketed) cursor = orig
   }
 }
 
 object StatefulFolder {
   abstract class NoHistory[E, Z](c: Json) extends StatefulFolder[E, Z](c) {
-    protected[this] def fail(message: String): Unit = onFail(DecodingFailure(message, Nil))
+    protected[this] def fail(message: String, op: NavigationOp = null): Unit = {
+      navigationFailure = op
+      onFail(DecodingFailure(message, Nil))
+    }
 
     final def onDownField(key: String): Unit = if (cursor.isObject) {
       asObjectUnsafe(key) match {
         case Some(v) =>
           cursor = v
           if (!failed) value = ()
-        case None => fail(s"Expected key: $key")
+        case None =>
+          fail(s"Expected key: $key", Op.DownField(key))
       }
     } else fail("Expected object")
 
@@ -114,7 +126,9 @@ object StatefulFolder {
       if (js.size > index) {
         cursor = js(index)
         if (!failed) value = ()
-      } else fail(s"Expected index: $index")
+      } else {
+        fail(s"Expected index: $index", Op.DownAt(index))
+      }
     } else fail("Expected array")
 
     final def onReadFields[A](opA: Op[A]): Unit = if (cursor.isObject) {
@@ -172,7 +186,8 @@ object StatefulFolder {
   abstract class WithHistory[E, Z](c: Json) extends StatefulFolder[E, Z](c) {
     private[this] var history: List[CursorOp] = Nil
 
-    protected[this] def fail(message: String): Unit = {
+    protected[this] def fail(message: String, op: NavigationOp = null): Unit = {
+      navigationFailure = op
       val h = history
       onFail(DecodingFailure(message, h))
     }
@@ -183,7 +198,7 @@ object StatefulFolder {
           cursor = v
           history = CursorOp.DownField(key) :: history
           if (!failed) value = ()
-        case None => fail(s"Expected key: $key")
+        case None => fail(s"Expected key: $key", Op.DownField(key))
       }
     } else fail("Expected object")
 
@@ -194,7 +209,7 @@ object StatefulFolder {
         cursor = js(index)
         history = CursorOp.DownN(index) :: history
         if (!failed) value = ()
-      } else fail(s"Expected index: $index")
+      } else fail(s"Expected index: $index", Op.DownAt(index))
     } else fail("Expected array")
 
     final def onReadFields[A](opA: Op[A]): Unit = if (cursor.isObject) {

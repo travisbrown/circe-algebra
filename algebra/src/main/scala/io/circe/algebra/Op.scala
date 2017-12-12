@@ -52,6 +52,7 @@ object Op extends OpInstances {
     def onReadFields[A](opA: Op[A]): Z
     def onReadValues[A](opA: Op[A]): Z
     def onReadMap[A](opA: Op[A]): Z
+    def onInspectNavigationFailure: Z
     def onDownField(key: String): Z
     def onDownAt(index: Int): Z
     def onPure[A](value: A): Z
@@ -83,6 +84,9 @@ object Op extends OpInstances {
   }
   final case object ReadDouble                                                 extends ReadingOp[Double] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadDouble
+  }
+  final case object InspectNavigationFailure                                   extends ReadingOp[Option[NavigationOp]] {
+    final def fold[Z](folder: Folder[Z]): Z = folder.onInspectNavigationFailure
   }
 
   // Reading operations for JSON objects and arrays.

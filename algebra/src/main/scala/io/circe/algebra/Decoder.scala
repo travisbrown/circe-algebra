@@ -33,6 +33,14 @@ object Decoder {
   implicit def decodeMap[A](implicit decodeA: Decoder[A]): Decoder[Map[String, A]] =
     Decoder.instance(Op.ReadMap(decodeA.op))
 
+  implicit def decodeOption[A](implicit decodeA: Decoder[A]): Decoder[Option[A]] =
+    Decoder.instance(
+      Op.InspectNavigationFailure.flatMap {
+        case Some(Op.DownField(_)) => Op.Pure(None)
+        case _ => decodeA.op.map(Some(_))
+      }
+    )
+
   implicit val decoderMonad: MonadError[Decoder, DecodingFailure] = new MonadError[Decoder, DecodingFailure] {
     def pure[A](a: A): Decoder[A] = Decoder.instance(Op.opMonadError.pure(a))
     def flatMap[A, B](a: Decoder[A])(f: A => Decoder[B]): Decoder[B] = a.flatMap(f)
