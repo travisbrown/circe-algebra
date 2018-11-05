@@ -30,7 +30,7 @@ abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, DecodingFailu
     case ReadMap(opA)    => StateT.get[F, J].flatMapF(readMap(opA))
 
     case Pure(value)           => StateT.pure(value)
-    case Fail(failure)         => StateT.lift(M.raiseError(failure))
+    case Fail(failure)         => StateT.liftF(M.raiseError(failure))
     case Mapper(opA, f, false) => self.compile(opA).map(f)
     case Bind(opA, f, false)   => self.compile(opA).flatMap(a => self.compile(f(a)))
     case Handle(opA, f, false) => stateMonad.handleErrorWith(self.compile(opA))(df => self.compile(f(df)))

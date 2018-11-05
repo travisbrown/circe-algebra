@@ -14,8 +14,8 @@ val compilerOptions = Seq(
   "-Ywarn-numeric-widen"
 )
 
-val catsVersion = "1.0.0-RC1"
-val circeVersion = "0.9.0-M2"
+val catsVersion = "1.4.0"
+val circeVersion = "0.10.1"
 
 val sharedSettings = Seq(
   scalacOptions ++= compilerOptions ++ (
@@ -44,7 +44,7 @@ val sharedSettings = Seq(
     "org.typelevel" %% "discipline" % "0.8" % Test,
     "org.typelevel" %% "cats-laws" % catsVersion % Test
   ),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
 )
 
 val root = project.in(file("."))

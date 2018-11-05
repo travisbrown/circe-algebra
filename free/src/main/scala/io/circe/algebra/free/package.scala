@@ -66,7 +66,7 @@ package object free {
       )
 
       case Bracket(op) => StateT.inspectF(op.foldMap[ErrorOrState](eitherInterpreter).runA(_: Json))
-      case Fail(failure) => StateT.lift[ErrorOr, Json, A](Left(failure))
+      case Fail(failure) => StateT.liftF[ErrorOr, Json, A](Left(failure))
     }
   }
 }
