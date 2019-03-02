@@ -15,8 +15,8 @@ val compilerOptions = Seq(
   "-Ywarn-unused-import"
 )
 
-val catsVersion = "1.4.0"
-val circeVersion = "0.10.1"
+val catsVersion = "1.6.0"
+val circeVersion = "0.11.1"
 
 val sharedSettings = Seq(
   scalacOptions ++= compilerOptions,
@@ -29,13 +29,14 @@ val sharedSettings = Seq(
   coverageHighlighting := true,
   libraryDependencies ++= Seq(
     "io.circe" %% "circe-core" % circeVersion,
+    "org.typelevel" %% "cats-core" % catsVersion,
     "io.circe" %% "circe-testing" % circeVersion % Test,
     "org.scalacheck" %% "scalacheck" % "1.13.5" % Test,
-    "org.scalatest" %% "scalatest" % "3.0.4" % Test,
-    "org.typelevel" %% "discipline" % "0.8" % Test,
+    "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+    "org.typelevel" %% "discipline" % "0.9.0" % Test,
     "org.typelevel" %% "cats-laws" % catsVersion % Test
   ),
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.8")
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.9")
 )
 
 val root = project.in(file("."))
