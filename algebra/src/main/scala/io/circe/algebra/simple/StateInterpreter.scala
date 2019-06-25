@@ -37,17 +37,17 @@ abstract class StateInterpreter[F[_], J](implicit M: MonadError[F, DecodingFailu
     case Join(opA, opB, false) => stateMonad.product(self.compile(opA), self.compile(opB))
     case Then(opA, opB, false) => StateT.get[F, J].flatMap(j => self.compile(opA).flatMap(_ => self.compile(opB)))
     case Mapper(opA, f, true)  => StateT.get[F, J].flatMap(j => self.compile(opA).map(f).modify(_ => j))
-    case Bind(opA, f, true)    =>
+    case Bind(opA, f, true) =>
       StateT.get[F, J].flatMap(j => self.compile(opA).flatMap(a => self.compile(f(a))).modify(_ => j))
 
-    case Handle(opA, f, true)    =>
-      StateT.get[F, J].flatMap(j =>
-        stateMonad.handleErrorWith(self.compile(opA))(df => self.compile(f(df))).modify(_ => j)
-      )
+    case Handle(opA, f, true) =>
+      StateT
+        .get[F, J]
+        .flatMap(j => stateMonad.handleErrorWith(self.compile(opA))(df => self.compile(f(df))).modify(_ => j))
 
-    case Join(opA, opB, true)  =>
+    case Join(opA, opB, true) =>
       StateT.get[F, J].flatMap(j => stateMonad.product(self.compile(opA), self.compile(opB)).modify(_ => j))
-    case Then(opA, opB, true)  =>
+    case Then(opA, opB, true) =>
       StateT.get[F, J].flatMap(j => self.compile(opA).flatMap(_ => self.compile(opB)).modify(_ => j))
   }
 

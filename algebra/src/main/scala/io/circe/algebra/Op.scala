@@ -64,54 +64,54 @@ object Op extends OpInstances {
   }
 
   // Primitive reading operations.
-  final case object ReadNull                                                   extends ReadingOp[Unit] {
+  final case object ReadNull extends ReadingOp[Unit] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadNull
   }
-  final case object ReadBoolean                                                extends ReadingOp[Boolean] {
+  final case object ReadBoolean extends ReadingOp[Boolean] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadBoolean
   }
-  final case object ReadNumber                                                 extends ReadingOp[BiggerDecimal] {
+  final case object ReadNumber extends ReadingOp[BiggerDecimal] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadNumber
   }
-  final case object ReadString                                                 extends ReadingOp[String] {
+  final case object ReadString extends ReadingOp[String] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadString
   }
 
   // Redundant reading operations designed to support optimizations.
-  final case object ReadLong                                                   extends ReadingOp[Long] {
+  final case object ReadLong extends ReadingOp[Long] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadLong
   }
-  final case object ReadDouble                                                 extends ReadingOp[Double] {
+  final case object ReadDouble extends ReadingOp[Double] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadDouble
   }
 
   // Reading operations for JSON objects and arrays.
-  final case class ReadFields[A](opA: Op[A])                                   extends ReadingOp[Vector[(String, A)]] {
+  final case class ReadFields[A](opA: Op[A]) extends ReadingOp[Vector[(String, A)]] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadFields(opA)
   }
-  final case class ReadValues[A](opA: Op[A])                                   extends ReadingOp[Vector[A]] {
+  final case class ReadValues[A](opA: Op[A]) extends ReadingOp[Vector[A]] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadValues(opA)
   }
-  final case class ReadMap[A](opA: Op[A])                                      extends ReadingOp[Map[String, A]] {
+  final case class ReadMap[A](opA: Op[A]) extends ReadingOp[Map[String, A]] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onReadMap(opA)
   }
 
   // Navigation operations.
-  final case class DownField(key: String)                                      extends NavigationOp {
+  final case class DownField(key: String) extends NavigationOp {
     final def fold[Z](folder: Folder[Z]): Z = folder.onDownField(key)
   }
-  final case class DownAt(index: Int)                                          extends NavigationOp {
+  final case class DownAt(index: Int) extends NavigationOp {
     final def fold[Z](folder: Folder[Z]): Z = folder.onDownAt(index)
   }
 
   // Operations supporting composition.
-  final case class Pure[A](value: A)                                           extends StrictOp[A] {
+  final case class Pure[A](value: A) extends StrictOp[A] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onPure(value)
   }
-  final case class Fail[A](failure: DecodingFailure)                           extends StrictOp[A] {
+  final case class Fail[A](failure: DecodingFailure) extends StrictOp[A] {
     final def fold[Z](folder: Folder[Z]): Z = folder.onFail(failure)
   }
-  final case class Mapper[A, B](opA: Op[A], f: A => B, isBracketed: Boolean)   extends CompositionOp[B] {
+  final case class Mapper[A, B](opA: Op[A], f: A => B, isBracketed: Boolean) extends CompositionOp[B] {
     final def bracket: Op[B] = if (isBracketed) this else copy(isBracketed = true)
     final def fold[Z](folder: Folder[Z]): Z = folder.onMap(opA, f, isBracketed)
   }
@@ -123,7 +123,7 @@ object Op extends OpInstances {
     final def bracket: Op[A] = if (isBracketed) this else copy(isBracketed = true)
     final def fold[Z](folder: Folder[Z]): Z = folder.onHandle(opA, f, isBracketed)
   }
-  final case class Join[A, B](opA: Op[A], opB: Op[B], isBracketed: Boolean)    extends CompositionOp[(A, B)] {
+  final case class Join[A, B](opA: Op[A], opB: Op[B], isBracketed: Boolean) extends CompositionOp[(A, B)] {
     final def bracket: Op[(A, B)] = if (isBracketed) this else copy(isBracketed = true)
     final def fold[Z](folder: Folder[Z]): Z = folder.onJoin(opA, opB, isBracketed)
   }

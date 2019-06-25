@@ -14,4 +14,3 @@ abstract class DirectInterpreter[F[_], J] extends Interpreter[F, J] {
 
   final def compile[A](op: Op[A]): J => F[A] = apply(op)
 }
-
