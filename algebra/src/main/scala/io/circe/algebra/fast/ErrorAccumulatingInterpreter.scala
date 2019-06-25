@@ -5,8 +5,8 @@ import io.circe.{ DecodingFailure, Json }
 import io.circe.algebra.{ DirectInterpreter, Op }
 import scala.collection.mutable.Builder
 
-abstract class ErrorAccumulatingInterpreter
-    extends DirectInterpreter[Either[NonEmptyList[DecodingFailure], ?], Json] { self =>
+abstract class ErrorAccumulatingInterpreter extends DirectInterpreter[Either[NonEmptyList[DecodingFailure], ?], Json] {
+  self =>
   protected[this] def folder[Z](j: Json): StatefulFolder[NonEmptyList[DecodingFailure], Z]
 
   def apply[A](op: Op[A])(j: Json): Either[NonEmptyList[DecodingFailure], A] = {

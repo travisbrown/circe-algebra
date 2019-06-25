@@ -20,7 +20,7 @@ object Decoder {
   implicit val decodeInt: Decoder[Int] = Decoder.instance(
     Op.ReadLong.flatMap {
       case x if x >= Int.MinValue.toLong && x <= Int.MaxValue.toLong => Op.Pure(x.toInt)
-      case _ => Op.Fail(DecodingFailure("Expected int", Nil))
+      case _                                                         => Op.Fail(DecodingFailure("Expected int", Nil))
     }
   )
 

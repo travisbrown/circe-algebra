@@ -45,7 +45,7 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
   final def onReadLong: Unit = if (cursor.isNumber) {
     asNumberUnsafe.toLong match {
       case Some(v) => if (!failed) value = v
-      case None => fail("Expected long")
+      case None    => fail("Expected long")
     }
   } else fail("Expected number")
 
@@ -53,9 +53,8 @@ abstract class StatefulFolder[E, Z](c: Json) extends Op.Folder[Unit] {
     value = asNumberUnsafe.toDouble
   } else fail("Expected number")
 
-  final def onPure[A](a: A): Unit = {
+  final def onPure[A](a: A): Unit =
     value = a
-  }
 
   final def onMap[A, B](opA: Op[A], f: A => B, isBracketed: Boolean): Unit = {
     val orig = cursor

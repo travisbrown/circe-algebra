@@ -9,19 +9,22 @@ import io.circe.{ DecodingFailure, Json }
 import io.circe.algebra.Op
 import io.circe.numbers.BiggerDecimal
 
-class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure]) extends StateInterpreter[F, Json]
+class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure])
+    extends StateInterpreter[F, Json]
     with MonadErrorHelpers[F, DecodingFailure] { self =>
   val F: MonadError[F, DecodingFailure] = M
 
   def readNull(j: Json): F[Unit] = if (j.isNull) F.pure(()) else F.raiseError(DecodingFailure("Expected null", Nil))
 
   def readBoolean(j: Json): F[Boolean] =
-    if (j.isBoolean) F.pure(j.asInstanceOf[Json.JBoolean].value) else {
+    if (j.isBoolean) F.pure(j.asInstanceOf[Json.JBoolean].value)
+    else {
       F.raiseError(DecodingFailure("Expected boolean", Nil))
     }
 
   def readNumber(j: Json): F[BiggerDecimal] =
-    if (j.isNumber) F.pure(j.asInstanceOf[Json.JNumber].value.toBiggerDecimal) else {
+    if (j.isNumber) F.pure(j.asInstanceOf[Json.JNumber].value.toBiggerDecimal)
+    else {
       F.raiseError(DecodingFailure("Expected number", Nil))
     }
 
@@ -33,7 +36,8 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure]) extends
     }
 
   def readDouble(j: Json): F[Double] =
-    if (j.isNumber) F.pure(j.asInstanceOf[Json.JNumber].value.toDouble) else {
+    if (j.isNumber) F.pure(j.asInstanceOf[Json.JNumber].value.toDouble)
+    else {
       F.raiseError(DecodingFailure("Expected number", Nil))
     }
 
@@ -46,7 +50,7 @@ class CirceInterpreter[F[_]](implicit M: MonadError[F, DecodingFailure]) extends
     } else F.raiseError(DecodingFailure(s"Expected object with key $key", Nil))
 
   def downAt(index: Int)(j: Json): F[Json] = fromOption(j.asArray.flatMap(_.lift(index)))(
-    DecodingFailure(s"Expected array with at least ${ index + 1} elements", Nil)
+    DecodingFailure(s"Expected array with at least ${index + 1} elements", Nil)
   )
 
   def readFields[A](opA: Op[A])(j: Json): F[Vector[(String, A)]] = {

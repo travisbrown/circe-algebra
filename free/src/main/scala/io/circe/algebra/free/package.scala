@@ -1,6 +1,6 @@
 package io.circe.algebra
 
-import cats.{ ~>, Monad, Traverse }
+import cats.{ Monad, Traverse, ~> }
 import cats.data.{ IndexedStateT, StateT }
 import io.circe.{ DecodingFailure, Error, Json }
 
@@ -29,43 +29,48 @@ package object free {
       )
 
     def apply[A](fa: Op[A]): ErrorOrState[A] = fa match {
-      case ReadNull => inspect("Expected null")(j => if (j.isNull) Some(()) else None)
+      case ReadNull    => inspect("Expected null")(j => if (j.isNull) Some(()) else None)
       case ReadBoolean => inspect("Expected boolean")(_.asBoolean)
-      case ReadNumber => inspect("Expected number")(_.asNumber.flatMap(_.toBigDecimal))
-      case ReadString => inspect("Expected string")(_.asString)
+      case ReadNumber  => inspect("Expected number")(_.asNumber.flatMap(_.toBigDecimal))
+      case ReadString  => inspect("Expected string")(_.asString)
 
-      case ReadFields(decodeA) => StateT.inspectF(
-        (_: Json).asObject match {
-          case Some(o) => traverseVector(o.toVector) {
-            case (k, v) =>
-              decodeA.op.foldMap[ErrorOrState](eitherInterpreter).runA(v)(errorOrMonad).right.map(k -> _)
+      case ReadFields(decodeA) =>
+        StateT.inspectF(
+          (_: Json).asObject match {
+            case Some(o) =>
+              traverseVector(o.toVector) {
+                case (k, v) =>
+                  decodeA.op.foldMap[ErrorOrState](eitherInterpreter).runA(v)(errorOrMonad).right.map(k -> _)
+              }
+            case None => Left(DecodingFailure("Expected object", Nil))
           }
-          case None => Left(DecodingFailure("Expected object", Nil))
-        }
-      )
+        )
 
-      case ReadValues(decodeA) => StateT.inspectF(
-        (_: Json).asArray match {
-          case Some(a) => traverseVector(a)(decodeA.op.foldMap[ErrorOrState](eitherInterpreter).runA(_))
-          case None => Left(DecodingFailure("Expected array", Nil))
-        }
-      )
+      case ReadValues(decodeA) =>
+        StateT.inspectF(
+          (_: Json).asArray match {
+            case Some(a) => traverseVector(a)(decodeA.op.foldMap[ErrorOrState](eitherInterpreter).runA(_))
+            case None    => Left(DecodingFailure("Expected array", Nil))
+          }
+        )
 
-      case DownField(key) => StateT.modifyF[ErrorOr, Json](
-        _.asObject.flatMap(_(key)) match {
-          case Some(v) => Right(v)
-          case None => Left(DecodingFailure("Expected object", Nil))
-        }
-      )
+      case DownField(key) =>
+        StateT.modifyF[ErrorOr, Json](
+          _.asObject.flatMap(_(key)) match {
+            case Some(v) => Right(v)
+            case None    => Left(DecodingFailure("Expected object", Nil))
+          }
+        )
 
-      case DownAt(index) => StateT.modifyF[ErrorOr, Json](
-        (_: Json).asArray.flatMap(_.lift(index)) match {
-          case Some(v) => Right(v)
-          case None => Left(DecodingFailure("Expected array", Nil))
-        }
-      )
+      case DownAt(index) =>
+        StateT.modifyF[ErrorOr, Json](
+          (_: Json).asArray.flatMap(_.lift(index)) match {
+            case Some(v) => Right(v)
+            case None    => Left(DecodingFailure("Expected array", Nil))
+          }
+        )
 
-      case Bracket(op) => StateT.inspectF(op.foldMap[ErrorOrState](eitherInterpreter).runA(_: Json))
+      case Bracket(op)   => StateT.inspectF(op.foldMap[ErrorOrState](eitherInterpreter).runA(_: Json))
       case Fail(failure) => StateT.liftF[ErrorOr, Json, A](Left(failure))
     }
   }

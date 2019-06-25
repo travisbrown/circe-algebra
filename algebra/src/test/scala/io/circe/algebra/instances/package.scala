@@ -15,9 +15,11 @@ package object instances {
     )
   )
 
-  private[this] def arbitraryValues[A](implicit A: Arbitrary[A]): Stream[A] = Stream.continually(
-    A.arbitrary.sample
-  ).flatten
+  private[this] def arbitraryValues[A](implicit A: Arbitrary[A]): Stream[A] = Stream
+    .continually(
+      A.arbitrary.sample
+    )
+    .flatten
 
   implicit def eqOp[A: Eq]: Eq[Op[A]] = Eq.instance[Op[A]] {
     case (Op.Pure(a), Op.Pure(b)) => Eq[A].eqv(a, b)

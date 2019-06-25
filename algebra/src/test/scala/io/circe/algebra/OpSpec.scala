@@ -8,10 +8,10 @@ import cats.laws.discipline.{ ApplicativeErrorTests, MonadTests }
 import io.circe.DecodingFailure
 import io.circe.algebra.instances._
 import io.circe.testing.instances._
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import org.typelevel.discipline.scalatest.Discipline
 
-class OpSpec extends FunSuite with Discipline {
+class OpSpec extends AnyFunSuite with Discipline {
   // Doesn't work at the moment because of `tailRecM`.
   // checkAll("MonadError[Ops]", MonadErrorTests[Op, Failure].monadError[Int, Int, Int])
 
