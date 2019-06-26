@@ -1,8 +1,8 @@
 package io.circe.algebra.benchmarks
 
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
-class DecodingBenchmarkSpec extends FlatSpec {
+class DecodingBenchmarkSpec extends AnyFlatSpec {
   val benchmark: DecodingBenchmark = new DecodingBenchmark
 
   "The decoding benchmark" should "correctly decode Foos using circe in fail-fast mode" in {
